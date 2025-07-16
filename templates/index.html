@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Henge Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .instructions p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .instructions p:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.no-henge {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .result h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .result p {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .coordinates {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+
+        .disclaimer {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 5px;
+            border-left: 3px solid #ffc107;
+        }
+
+        .disclaimer p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌅 Henge Finder</h1>
+        <p class="subtitle">Discover when the sun aligns with your street for a perfect sunset view</p>
+        
+        <div class="instructions">
+            <h3>How to Use</h3>
+            <p>If you have a street that's long and straight enough, enter an address along that street to find out when the sun will set aligned with your street. This creates a "henge" effect similar to Manhattanhenge, where the sun appears to set directly down the street.</p>
+            <p><strong>Tip:</strong> Look for streets that run roughly east-west for the best sunset alignments.</p>
+        </div>
+        
+        <form id="hengeForm">
+            <div class="form-group">
+                <label for="address">Enter an address:</label>
+                <input type="text" id="address" name="address" placeholder="e.g., 211 E 43rd St, NYC" required>
+            </div>
+            <button type="submit" id="submitBtn">Find Henge</button>
+        </form>
+
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Searching for henge alignment (may take a moment)...</p>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('hengeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const address = document.getElementById('address').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                console.log('Sending request for address:', address);
+                const response = await fetch('/check_henge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ address: address })
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (response.ok) {
+                    console.log('Response is OK, calling displayResult');
+                    displayResult(data);
+                } else {
+                    console.log('Response is not OK, calling displayError');
+                    displayError(data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                displayError('Network error. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+
+        function displayResult(data) {
+            console.log('displayResult called with:', data);
+            const resultDiv = document.getElementById('result');
+            const result = data.result;
+            console.log('Result object:', result);
+            console.log('henge_found value:', result.henge_found);
+            console.log('henge_found type:', typeof result.henge_found);
+            
+            let html = '';
+            
+            if (result.henge_found) {
+                console.log('Henge found, generating success HTML');
+                html = `
+                    <h3>🎉 Henge Found!</h3>
+                    <p><span class="highlight">Address:</span> ${data.address}</p>
+                    <p><span class="highlight">Next Henge Date:</span> ${formatDate(result.henge_date)}</p>
+                    <p><span class="highlight">Street Bearing:</span> ${result.road_angle}° from North</p>
+                    <p><span class="highlight">Sun Bearing:</span> ${result.sun_angle}° from North</p>
+                    <div class="coordinates">
+                        <strong>Coordinates:</strong> ${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lon.toFixed(6)}
+                    </div>
+                    <p><em>Perfect alignment! The sun will set directly down your street on this date.</em></p>
+                    <div class="disclaimer">
+                        <p><strong>Note:</strong> These predictions are rough estimates calculations. For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
+                    </div>
+                `;
+                console.log('Generated HTML:', html);
+            } else {
+                console.log('No henge found, generating no-henge HTML');
+                html = `
+                    <h3>🔍 No Henge Found</h3>
+                    <p><span class="highlight">Address:</span> ${data.address}</p>
+                    <p><span class="highlight">Street Bearing:</span> ${result.road_angle}° from North</p>
+                    <div class="coordinates">
+                        <strong>Coordinates:</strong> ${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lon.toFixed(6)}
+                    </div>
+                    <p><em>No henge alignment found in the next ${result.days_searched} days. The sun's path doesn't align with your street's orientation at this location.</em></p>
+                    <div class="disclaimer">
+                        <p><strong>Note:</strong> These predictions are rough estimates based on simplified calculations. For official city-wide henge events (like Manhattanhenge), check official announcements as they use specific reference points and may differ from street-to-street calculations.</p>
+                    </div>
+                `;
+                console.log('Generated no-henge HTML:', html);
+            }
+            
+            console.log('Setting innerHTML and displaying result div');
+            
+            // Set the content and styling
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+            resultDiv.style.visibility = 'visible';
+            resultDiv.style.opacity = '1';
+            
+            if (result.henge_found) {
+                resultDiv.style.color = '#155724';
+                resultDiv.style.background = '#d4edda';
+                resultDiv.style.border = '1px solid #c3e6cb';
+            } else {
+                resultDiv.style.color = '#856404';
+                resultDiv.style.background = '#fff3cd';
+                resultDiv.style.border = '1px solid #ffeaa7';
+            }
+            console.log('Result displayed successfully!');
+        }
+
+        function displayError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="result error">
+                    <h3>❌ Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html> 

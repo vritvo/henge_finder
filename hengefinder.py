@@ -79,7 +79,7 @@ def get_horizon_azimuth(lat, lon, date, target_altitude_deg=0.5, search_window_m
             az = sun.azimuth(obs, exact_time)
             return az, exact_time
 
-def check_viable_henge(address, starting_date = datetime.today(), match_threshold_deg = 0.5):
+def check_viable_henge(lat, lon, starting_date, match_threshold_deg=0.5):
     """
     Check if a henge is possible at a given address, and returns the date of the first time the sun is aligned with the road if possible.
     Args:
@@ -87,38 +87,47 @@ def check_viable_henge(address, starting_date = datetime.today(), match_threshol
         starting_date: The date to start searching for a henge
         match_threshold_deg: The threshold for a match (road + sun) in degrees. 
     """
-    try: 
-        lat, lon = get_coordinates(address)
-    except:
-        print(f"Error getting coordinates for {address}")
-        return None
+    try:
+        from hengefinder import get_horizon_azimuth
+        from datetime import timedelta
+        
+        road_angle = get_road_angle(lat, lon)
+        
+        # Check if the sun is ever at the road bearing
+        max_days_to_search = 365
+        henge_found = False
+        henge_date = None
+        sun_angle = None
+        
+        for i in range(max_days_to_search):
+            date = starting_date + timedelta(days=i)
+            try:
+                sun_az, when = get_horizon_azimuth(lat, lon, date, target_altitude_deg=0.5)
+                angle_diff = abs(sun_az - road_angle)
+                angle_diff_opposite = abs(angle_diff - 180)
+                
+                if min(angle_diff, angle_diff_opposite) < match_threshold_deg:
+                    henge_found = True
+                    henge_date = when
+                    sun_angle = sun_az
+                    break
+            except Exception as e:
+                print(f"Error on date {date}: {e}")
+                continue
+        
+        return {
+            'henge_found': henge_found,
+            'henge_date': henge_date.isoformat() if henge_date else None,
+            'sun_angle': round(sun_angle, 2) if sun_angle else None,
+            'road_angle': round(road_angle, 2),
+            'days_searched': max_days_to_search
+        }
+        
+    except Exception as e:
+        return {'error': str(e)}
     
-    road_angle = get_road_angle(lat, lon)
-    print(f"Street bearing for {address} is {road_angle} degrees from North.")
     
-    # Check if the sun is ever at the road bearing
-    # We only need to search ~6 months to cover the full range of sunset azimuths
-    max_days_to_search = 180
-    henge_found = False
     
-    for i in range(max_days_to_search):
-        date = starting_date + timedelta(days=i)
-        try:
-            sun_angle, when = get_horizon_azimuth(lat, lon, date, target_altitude_deg=0.5)
-            angle_diff = abs(sun_angle - road_angle)
-            angle_diff_opposite = abs(angle_diff - 180) # necessary, e.g. if sun is 270, road is 90, that should count as a match.
-            
-            if min(angle_diff, angle_diff_opposite) < match_threshold_deg:  
-                print(f"Aligned sunset at {address} at {when}. Street bearing: {road_angle:0.2f}°, Sun bearing: {sun_angle:0.2f}°.")
-                henge_found = True
-                break
-        except: #TODO: can't get for some dates
-            print(f"Error getting sun angle for {date}")
-            continue
-    
-    if not henge_found:
-        print(f"No henge found for {address} in the next {max_days_to_search} days.")
-
 if __name__ == "__main__":
     
     address = "211 E 43rd St NYC" #Reference for manhattanhenge
@@ -126,6 +135,5 @@ if __name__ == "__main__":
     # address = "601-615 E 76th St, Chicago, IL"
     # address = "3131 Market St, Philadelphia, PA 19104"
 
-    check_viable_henge(address, datetime.today())
-
-    
+    lat, lon = get_coordinates(address)
+    check_viable_henge(lat, lon, datetime.today())
