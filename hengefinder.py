@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import osmnx as ox
 from zoneinfo import ZoneInfo
 from timezonefinder import TimezoneFinder
+from datetime import timedelta
 
 def get_coordinates(address):
     geolocator = Nominatim(user_agent="HengeFinder", timeout=10) #timeout is needed for some addresses
@@ -61,35 +62,62 @@ def get_horizon_azimuth(lat, lon, date, target_altitude_deg=0.5, search_window_m
     Find the azimuth of the sun at a given date, location, and  altitude (e.g. 0.5 degrees for the sun just visible on the horizon)
     Returns the azimuth and the time of the event.
     """
-    
+    print(date)
     tz = get_timezone_from_coordinates(lat, lon)
     obs = Observer(lat, lon)
 
     # Get sunset time for date/location
     s = sun.sun(obs, date)
-    sunset = s["sunset"].astimezone(tz)
+    sunset_time = s["sunset"].astimezone(tz)
 
-    # Search mins leading up to sunset for when the sun is at the target altitude
-    for minute in range(-search_window_minutes, 1):  # e.g. -20 to 0
-        exact_time = sunset + timedelta(minutes=minute)
-        alt = sun.elevation(obs, exact_time)
+    # Search mins leading up to sunset for when the sun is at the target altitude    
+    # for minute in range(-search_window_minutes, 1):  # e.g. -20 to 0
+    #     exact_time = sunset + timedelta(minutes=minute)
+    #     alt = sun.elevation(obs, exact_time)
 
-        # Once the sun has dropped below the altitude we care about, return the azimuth and time
-        if alt < target_altitude_deg:
-            az = sun.azimuth(obs, exact_time)
-            return az, exact_time
+    #     # Once the sun has dropped below the altitude we care about, return the azimuth and time
+    #     if alt < target_altitude_deg:
+    #         az = sun.azimuth(obs, exact_time)
+    #         return az, exact_time
+
+    def binary_search(start, end, ref): 
+        min_dist = float("inf")
+        best_minute: int
+        
+        l, r = start, end
+        while l < r:
+            minute = (l + r) // 2
+        
+            exact_time = sunset_time + timedelta(minutes=minute)
+            altitude = sun.elevation(obs, exact_time)
+            
+            dist = ref - altitude
+            if dist == 0:
+                return sun.azimuth(obs, exact_time), exact_time
+            elif dist < 0:
+                l = minute + 1
+            else:
+                r = minute - 1
+
+            if dist >= 0 and dist >= min_dist:
+                exact_time = sunset_time + timedelta(minutes=best_minute)
+                return sun.azimuth(obs, exact_time), exact_time
+            if dist >= 0 and dist < min_dist:
+                min_dist = dist
+                best_minute = minute
+        
+        exact_time = sunset_time + timedelta(minutes=best_minute)
+        return sun.azimuth(obs, exact_time), exact_time
+    
+    return binary_search(-search_window_minutes, 1, target_altitude_deg)
+
+
 
 def check_viable_henge(lat, lon, starting_date, match_threshold_deg=0.5):
     """
     Check if a henge is possible at a given address, and returns the date of the first time the sun is aligned with the road if possible.
-    Args:
-        address: The address of the location to check
-        starting_date: The date to start searching for a henge
-        match_threshold_deg: The threshold for a match (road + sun) in degrees. 
     """
     try:
-        from hengefinder import get_horizon_azimuth
-        from datetime import timedelta
         
         road_angle = get_road_angle(lat, lon)
         
@@ -130,10 +158,17 @@ def check_viable_henge(lat, lon, starting_date, match_threshold_deg=0.5):
     
 if __name__ == "__main__":
     
-    address = "211 E 43rd St NYC" #Reference for manhattanhenge
+    # address = "211 E 43rd St NYC" #Reference for manhattanhenge
     # address = "493 Eastern Pkwy, Brooklyn, NY 11225"
-    # address = "601-615 E 76th St, Chicago, IL"
+    address = "601-615 E 76th St, Chicago, IL"
     # address = "3131 Market St, Philadelphia, PA 19104"
 
     lat, lon = get_coordinates(address)
-    check_viable_henge(lat, lon, datetime.today())
+    henge_found, henge_date, sun_angle, road_angle, days_searched = check_viable_henge(lat, lon, datetime.today())
+
+    print(henge_found)
+
+    if henge_found == True: 
+        print(f"Henge found! Date: {henge_date}, sun_angle = {sun_angle:.2f}, road_angle = {road_angle:.2f}")
+    else:
+        print(f"No Henge found.")
