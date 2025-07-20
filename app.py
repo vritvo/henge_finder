@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from hengefinder import check_viable_henge, get_coordinates, get_road_angle
+from hengefinder import search_for_henge, get_coordinates, get_road_angle
 from datetime import datetime
 import traceback
 
@@ -38,7 +38,7 @@ def check_henge():
         
         # Check for henge
         print("Checking for henge...")
-        result = check_viable_henge(lat, lon, datetime.today())
+        result = search_for_henge(lat, lon, datetime.today())
         print(f"Henge result: {result}")
         
         return jsonify({

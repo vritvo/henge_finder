@@ -199,6 +199,16 @@
             color: #666;
             line-height: 1.4;
         }
+        
+        .disclaimer p:not(:last-child) {
+            margin-bottom: 15px;
+        }
+        
+        .disclaimer .topic {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -295,7 +305,8 @@
                     </div>
                     <p><em>Perfect alignment! The sun will set directly down your street on this date.</em></p>
                     <div class="disclaimer">
-                        <p><strong>Note:</strong> These predictions are rough estimates calculations. For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
+                        <p><span class="topic">Note: These predictions are rough estimates calculations.</span> For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
+                        <p><span class="topic">Note: This app works best with long, straight streets.</span> If the calculated "Street Bearing" (i.e. road angle) seems incorrect, try using an address further down the same street. Road curves, intersections, or unusual street layouts can affect the angle calculation.</p>
                     </div>
                 `;
                 console.log('Generated HTML:', html);
@@ -310,7 +321,8 @@
                     </div>
                     <p><em>No henge alignment found in the next ${result.days_searched} days. The sun's path doesn't align with your street's orientation at this location.</em></p>
                     <div class="disclaimer">
-                        <p><strong>Note:</strong> These predictions are rough estimates based on simplified calculations. For official city-wide henge events (like Manhattanhenge), check official announcements as they use specific reference points and may differ from street-to-street calculations.</p>
+                        <p><span class="topic">Note: These predictions are rough calculations based on various assumptions.</span> For official city-wide henge events (like Manhattanhenge), check official announcements as they use specific reference points and may differ from street-to-street calculations here.</p>
+                        <p><span class="topic">Note: This app works best with long, straight streets.</span> If the calculated "Street Bearing" seems incorrect, try using an address further down the same street. Road curves, intersections, or unusual street layouts can affect the angle calculation.</p>
                     </div>
                 `;
                 console.log('Generated no-henge HTML:', html);
