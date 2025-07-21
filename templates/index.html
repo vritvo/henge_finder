@@ -148,18 +148,21 @@
             background: #d4edda;
             border: 1px solid #c3e6cb;
             color: #155724;
+            display: block;
         }
 
         .result.error {
             background: #f8d7da;
             border: 1px solid #f5c6cb;
             color: #721c24;
+            display: block;
         }
 
         .result.no-henge {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
             color: #856404;
+            display: block;
         }
 
         .result h3 {
@@ -253,7 +256,6 @@
             result.style.display = 'none';
             
             try {
-                console.log('Sending request for address:', address);
                 const response = await fetch('/check_henge', {
                     method: 'POST',
                     headers: {
@@ -262,16 +264,16 @@
                     body: JSON.stringify({ address: address })
                 });
                 
-                console.log('Response status:', response.status);
                 const data = await response.json();
-                console.log('Response data:', data);
                 
                 if (response.ok) {
-                    console.log('Response is OK, calling displayResult');
                     displayResult(data);
                 } else {
-                    console.log('Response is not OK, calling displayError');
-                    displayError(data.error);
+                    try {
+                        displayError(data.error);
+                    } catch (error) {
+                        console.error('Error in displayError:', error);
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -283,17 +285,12 @@
         });
 
         function displayResult(data) {
-            console.log('displayResult called with:', data);
             const resultDiv = document.getElementById('result');
             const result = data.result;
-            console.log('Result object:', result);
-            console.log('henge_found value:', result.henge_found);
-            console.log('henge_found type:', typeof result.henge_found);
             
             let html = '';
             
             if (result.henge_found) {
-                console.log('Henge found, generating success HTML');
                 html = `
                     <h3>🎉 Henge Found!</h3>
                     <p><span class="highlight">Address:</span> ${data.address}</p>
@@ -309,9 +306,8 @@
                         <p><span class="topic">Note: This app works best with long, straight streets.</span> If the calculated "Street Bearing" (i.e. road angle) seems incorrect, try using an address further down the same street. Road curves, intersections, or unusual street layouts can affect the angle calculation.</p>
                     </div>
                 `;
-                console.log('Generated HTML:', html);
+                resultDiv.className = 'result success';
             } else {
-                console.log('No henge found, generating no-henge HTML');
                 html = `
                     <h3>🔍 No Henge Found</h3>
                     <p><span class="highlight">Address:</span> ${data.address}</p>
@@ -325,38 +321,39 @@
                         <p><span class="topic">Note: This app works best with long, straight streets.</span> If the calculated "Street Bearing" seems incorrect, try using an address further down the same street. Road curves, intersections, or unusual street layouts can affect the angle calculation.</p>
                     </div>
                 `;
-                console.log('Generated no-henge HTML:', html);
+                resultDiv.className = 'result no-henge';
             }
             
-            console.log('Setting innerHTML and displaying result div');
-            
-            // Set the content and styling
+            // Set the content
             resultDiv.innerHTML = html;
-            resultDiv.style.display = 'block';
-            resultDiv.style.visibility = 'visible';
-            resultDiv.style.opacity = '1';
-            
-            if (result.henge_found) {
-                resultDiv.style.color = '#155724';
-                resultDiv.style.background = '#d4edda';
-                resultDiv.style.border = '1px solid #c3e6cb';
-            } else {
-                resultDiv.style.color = '#856404';
-                resultDiv.style.background = '#fff3cd';
-                resultDiv.style.border = '1px solid #ffeaa7';
-            }
-            console.log('Result displayed successfully!');
         }
 
         function displayError(message) {
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = `
-                <div class="result error">
-                    <h3>❌ Error</h3>
-                    <p>${message}</p>
-                </div>
+            
+            // Create a completely new div element
+            const errorDiv = document.createElement('div');
+            errorDiv.innerHTML = `
+                <h3>❌ Error</h3>
+                <p>${message}</p>
             `;
+            errorDiv.style.cssText = `
+                margin-top: 30px;
+                padding: 20px;
+                border-radius: 10px;
+                background: #f8d7da;
+                border: 1px solid #f5c6cb;
+                color: #721c24;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            `;
+            
+            // Clear the result div and append the new error div
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+            resultDiv.appendChild(errorDiv);
             resultDiv.style.display = 'block';
+            
         }
 
         function formatDate(dateString) {
