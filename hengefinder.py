@@ -12,7 +12,7 @@ import numpy as np
 # Henge calculation parameters
 TARGET_ALTITUDE_DEG = 0.5  # Sun elevation for henge effect (degrees)
 SEARCH_WINDOW_MINUTES = 20  # Minutes before sunset to search
-MATCH_THRESHOLD_DEG = 0.5   # How close sun must be to road bearing (degrees)
+MATCH_THRESHOLD_DEG = 0.5   # How close sun must be to road bearing (degrees) to be considered aligned
 
 # Search parameters  
 MAX_DAYS_TO_SEARCH = 365    # How many days to search forward
@@ -26,7 +26,11 @@ class GeocodingError(Exception):
     pass
 
 def get_coordinates(address):
-    geolocator = Nominatim(user_agent="HengeFinder", timeout=10) #timeout is needed for some addresses
+    """
+    Convert an address to latitude and longitude coordinates using geocoding.
+    """
+    
+    geolocator = Nominatim(user_agent="HengeFinder", timeout=10) #longer timeout is needed for some addresses
     location = geolocator.geocode(address)
     
     if location is None:
@@ -35,11 +39,17 @@ def get_coordinates(address):
     return (location.latitude, location.longitude)
 
 def get_timezone_from_coordinates(lat, lon):
+    """
+    Get the timezone for a given latitude and longitude.
+    """
     tf = TimezoneFinder()
     timezone_name = tf.timezone_at(lat=lat, lng=lon)
     return ZoneInfo(timezone_name)
 
-def check_match(azimuth, road_bearing, match_threshold_deg = MATCH_THRESHOLD_DEG):
+def check_match(azimuth, road_bearing, match_threshold_deg=MATCH_THRESHOLD_DEG):
+    """
+    Check if the sun's azimuth aligns with the road bearing within the threshold.
+    """
     angle_diff = abs(azimuth - road_bearing)
     angle_diff_opposite = abs(angle_diff - 180)
     
@@ -87,8 +97,19 @@ def get_road_angle(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="all"):
     return bearing
 
 
-def get_closest_alignment_direction(azimuth, road_angle):
-
+def get_closest_alignment_direction(azimuth: float, road_angle: float) -> tuple[float, int]:
+    """
+    Calculate the shortest angular difference between sun azimuth and road angle.
+    
+    Args:
+        azimuth: Sun's azimuth angle in degrees
+        road_angle: Road's bearing angle in degrees
+        
+    Returns:
+        tuple (bearing_difference, direction_sign)
+            - bearing_difference: Angular difference in degrees (-180 to 180)
+            - direction_sign: 1 if road is clockwise from sun, -1 if counterclockwise
+    """
     # Calculate the shortest angular difference, accounting for both directions
     angle_diff = abs(azimuth - road_angle)
     angle_diff_opposite = abs(angle_diff - 180)
@@ -108,21 +129,30 @@ def get_closest_alignment_direction(azimuth, road_angle):
     return bearing_difference, np.sign(bearing_difference)
 
 
-def get_horizon_azimuth(lat, lon, date, target_altitude_deg=TARGET_ALTITUDE_DEG, search_window_minutes=SEARCH_WINDOW_MINUTES):
+def get_horizon_azimuth(
+    lat, 
+    lon, 
+    date, 
+    target_altitude_deg=TARGET_ALTITUDE_DEG, 
+    search_window_minutes=SEARCH_WINDOW_MINUTES
+):
     """
-    Find the azimuth of the sun at a given date, location, and  altitude (e.g. 0.5 degrees for the sun just visible on the horizon)
-    Returns the azimuth and the time of the event.
+    Find the sun's azimuth when it reaches a specific altitude above the horizon.
+    
+    Uses binary search to find the exact time when the sun is first at the target altitude
+    within the search window before sunset.
+    
+    Returns:
+        tuple: (azimuth, exact_time)
     """
     try:
         print(date.date())
         tz = get_timezone_from_coordinates(lat, lon)
-        print(f"Timezone: {tz}")
         obs = Observer(lat, lon)
 
         # Get sunset time for date/location
         s = sun.sun(obs, date)
         sunset_time = s["sunset"].astimezone(tz)
-        print(f"Sunset time: {sunset_time}")
     
     except (ValueError, AttributeError) as e: 
         print(f"Could not get azimuth for {date}: {e}")
@@ -162,14 +192,12 @@ def _binary_search(
 
         if dist >= 0 and dist >= min_dist:
             exact_time = sunset_time + timedelta(minutes=best_minute)
-            print(f"Binary search result: {exact_time}")
             return sun.azimuth(obs, exact_time), exact_time
         if dist >= 0 and dist < min_dist:
             min_dist = dist
             best_minute = minute
     
     exact_time = sunset_time + timedelta(minutes=best_minute)
-    print(f"Binary search result: {exact_time}")
     return sun.azimuth(obs, exact_time), exact_time
 
 def check_viable_henge(lat, lon, starting_date, match_threshold_deg=MATCH_THRESHOLD_DEG):
@@ -273,7 +301,7 @@ def search_for_henge(lat, lon, date, match_threshold_deg=MATCH_THRESHOLD_DEG, st
     print(f"bearing_difference {bearing_difference}")
     
     if abs(bearing_difference) < match_threshold_deg:
-        # Immediate match found - sun is already aligned with the road
+        # Sun is already aligned with the road
         _, exact_time = get_horizon_azimuth(lat, lon, date, target_altitude_deg=target_altitude_deg)
         return {
             'henge_found': True,
@@ -295,7 +323,7 @@ def search_for_henge(lat, lon, date, match_threshold_deg=MATCH_THRESHOLD_DEG, st
 
         # Initialize values from outer scope
         start_date = date
-        end_date = date + timedelta(days=max_days_to_search)
+        end_date = date + timedelta(days=MAX_DAYS_TO_SEARCH)
         prev_date = start_date
         prev_az = az_tomorrow
         prev_sun_direction = sun_direction
@@ -368,27 +396,25 @@ def search_for_henge(lat, lon, date, match_threshold_deg=MATCH_THRESHOLD_DEG, st
             'henge_date': None,
             'sun_angle': None,
             'road_angle': round(road_angle, 2),
-            'days_searched': max_days_to_search
+            'days_searched': MAX_DAYS_TO_SEARCH
         }
         
     result = _search_over_days(step=step_size)
     
     return result
-    
 
-    
     
 if __name__ == "__main__":
     
     address = "211 E 43rd St NYC" #Reference for manhattanhenge
     #address = "493 Eastern Pkwy, Brooklyn, NY 11225"
-    address = "601-615 E 76th St, Chicago, IL"
+    #address = "601-615 E 76th St, Chicago, IL"
     #address = "3131 Market St, Philadelphia, PA 19104"
     #address = "594-598 Broadway, Brooklyn, NY 11206"
     #address = "350 King St W, Toronto, ON M5V 3X5, Canada"
     #address = "43 Front St E, Toronto, ON M5E 1B3, Canada"
-    address = "701-651 E Tudor Rd, Anchorage, AK 99503"
-    address = "84 Thirlestane Rd, Edinburgh EH9 1AR, UK"
+    #address = "701-651 E Tudor Rd, Anchorage, AK 99503"
+    #address = "84 Thirlestane Rd, Edinburgh EH9 1AR, UK"
     
     try:
         lat, lon = get_coordinates(address)
