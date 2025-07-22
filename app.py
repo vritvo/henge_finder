@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
-from hengefinder import search_for_henge, get_coordinates, get_road_angle, GeocodingError
+from hengefinder import search_for_henge
+from utils import get_coordinates, get_road_angle, GeocodingError
 from datetime import datetime
 import traceback
 
@@ -27,7 +28,7 @@ def check_henge():
         except GeocodingError as e:
             print(f"Geocoding error: {e}")
             return jsonify({
-                'error': f"Could not find the address '{address}'. Please check the spelling and try again. You can also try a more general location (e.g., 'Main St, City, State' instead of a specific house number)."
+                'error': f"Could not find the address '{address}'. Please check the spelling and try again)."
             }), 400
         except Exception as e:
             print(f"Unexpected error getting coordinates: {e}")
