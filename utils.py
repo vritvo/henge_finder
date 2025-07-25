@@ -27,6 +27,15 @@ def get_coordinates(address):
     
     return (location.latitude, location.longitude)
 
+def check_latitude(lat, max_lat=60): 
+    """ 
+    Make sure the latitude is within some range.  
+    """
+    if abs(lat) > max_lat: 
+        raise ValueError(f"Address out of range.")
+    return True
+    
+    
 def get_timezone_from_coordinates(lat, lon):
     """
     Get the timezone for a given latitude and longitude.
@@ -161,7 +170,7 @@ def _binary_search(
     obs
 ): 
     """
-    Modification of binary search specifically to find the azimuth of the sun at the last minute before it drops below the horizon
+    Modification of binary search specifically to find the azimuth of the sun at the last minute before it drops below the target altitude of interest.
     
     We keep track of the min distance between the altitudes we've found so far and the target_altitude_deg.
         - if dist = 0, we've found an exact match (the sun is sitting exactly where we want)

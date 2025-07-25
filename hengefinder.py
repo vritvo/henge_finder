@@ -56,9 +56,13 @@ def search_for_henge(
     # Check if the sun is aligned with the road today or tomorrow, before we start our main search.
     for az, exact_time in [(az_today, exact_time_today), (az_tomorrow, exact_time_tomorrow)]:
         if check_match(az, road_bearing, match_threshold_deg):
+            tzname = exact_time.tzname() if exact_time and exact_time.tzinfo else None
+            time_str = exact_time.strftime('%Y-%m-%d %H:%M %Z') if exact_time else None
             return {
                 'henge_found': True,
                 'henge_date': exact_time.isoformat(),
+                'henge_time_local_str': time_str,
+                'henge_timezone': tzname,
                 'sun_angle': round(az, 2),
                 'road_bearing': round(road_bearing, 2),
                 'days_searched': 0
@@ -104,9 +108,13 @@ def search_for_henge(
             
             # Check if we found a match
             if abs(bearing_diff_curr) < match_threshold_deg:
+                tzname = exact_time.tzname() if exact_time and exact_time.tzinfo else None
+                time_str = exact_time.strftime('%Y-%m-%d %H:%M %Z') if exact_time else None
                 return {
                     'henge_found': True,
                     'henge_date': exact_time.isoformat(),
+                    'henge_time_local_str': time_str,
+                    'henge_timezone': tzname,
                     'sun_angle': round(az_curr_date, 2),
                     'road_bearing': round(road_bearing, 2),
                 }
@@ -130,9 +138,13 @@ def search_for_henge(
                 
             
                 if henge_found == True: 
+                    tzname = henge_date.tzname() if henge_date and henge_date.tzinfo else None
+                    time_str = henge_date.strftime('%Y-%m-%d %H:%M %Z') if henge_date else None
                     return {
                     'henge_found': henge_found,
                     'henge_date': henge_date.isoformat() if henge_date else None,
+                    'henge_time_local_str': time_str,
+                    'henge_timezone': tzname,
                     'sun_angle': round(azimuth, 2) if azimuth else None,
                     'road_bearing': round(road_bearing, 2),
                 }
@@ -147,6 +159,8 @@ def search_for_henge(
         return {
             'henge_found': False,
             'henge_date': None,
+            'henge_time_local_str': None,
+            'henge_timezone': None,
             'sun_angle': None,
             'road_bearing': round(road_bearing, 2),
             'days_searched': MAX_DAYS_TO_SEARCH
@@ -204,7 +218,8 @@ if __name__ == "__main__":
     #address = "84 Thirlestane Rd, Edinburgh EH9 1AR, UK"
     
     
-    lat, lon = get_coordinates(address)
+    lat, lon = get_coordinates("address")
+    check_latitude(lat)
     print(f"Coordinates: {lat}, {lon}")
     
     result = search_for_henge(lat, lon, datetime.today(), step_size=COARSE_SEARCH_STEP_DAYS)

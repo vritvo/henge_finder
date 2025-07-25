@@ -299,7 +299,7 @@
                 html = `
                     <h3>🎉 Henge Found!</h3>
                     <p><span class="highlight">Address:</span> ${data.address}</p>
-                    <p><span class="highlight">Next Henge Date:</span> ${formatDate(result.henge_date)}</p>
+                    <p><span class="highlight">Next Henge Date:</span> ${result.henge_time_local_str ? result.henge_time_local_str : formatDate(result.henge_date)}</p>
                     <p><span class="highlight">Street Bearing:</span> ${data.road_bearing}° from North</p>
                     <p><span class="highlight">Sun Azimuth:</span> ${result.sun_angle}° from North</p>
                     <div class="coordinates">
