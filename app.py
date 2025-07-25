@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from hengefinder import search_for_henge
-from utils import get_coordinates, get_road_angle, GeocodingError
+from utils import get_coordinates, get_road_bearing, GeocodingError
 from datetime import datetime
 import traceback
 
@@ -36,8 +36,8 @@ def check_henge():
         
         # Get road angle
         try:
-            road_angle = get_road_angle(lat, lon)
-            print(f"Road angle: {road_angle}")
+            road_bearing = get_road_bearing(lat, lon)
+            print(f"Road angle: {road_bearing}")
         except Exception as e:
             print(f"Error getting road angle: {e}")
             return jsonify({
@@ -52,7 +52,7 @@ def check_henge():
         return jsonify({
             'address': address,
             'coordinates': {'lat': lat, 'lon': lon},
-            'road_angle': round(road_angle, 2),
+            'road_bearing': round(road_bearing, 2),
             'result': result
         })
         

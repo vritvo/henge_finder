@@ -45,7 +45,7 @@
         }
 
         .instructions {
-            background: #f8f4f0;
+            background: #fff;
             border-left: 4px solid #7c4279;
             padding: 20px;
             margin-bottom: 30px;
@@ -185,7 +185,7 @@
         }
 
         .coordinates {
-            background: #f8f4f0;
+            background: #fff;
             padding: 10px;
             border-radius: 5px;
             margin: 10px 0;
@@ -196,7 +196,7 @@
         .disclaimer {
             margin-top: 15px;
             padding: 10px;
-            background: rgba(248, 244, 240, 0.85);
+            background: #fff;
             border-radius: 5px;
             border-left: 3px solid #7c4279;
         }
@@ -300,8 +300,8 @@
                     <h3>🎉 Henge Found!</h3>
                     <p><span class="highlight">Address:</span> ${data.address}</p>
                     <p><span class="highlight">Next Henge Date:</span> ${formatDate(result.henge_date)}</p>
-                    <p><span class="highlight">Street Bearing:</span> ${result.road_angle}° from North</p>
-                    <p><span class="highlight">Sun Bearing:</span> ${result.sun_angle}° from North</p>
+                    <p><span class="highlight">Street Bearing:</span> ${data.road_bearing}° from North</p>
+                    <p><span class="highlight">Sun Azimuth:</span> ${result.sun_angle}° from North</p>
                     <div class="coordinates">
                         <strong>Coordinates:</strong> ${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lon.toFixed(6)}
                     </div>
@@ -316,7 +316,7 @@
                 html = `
                     <h3>🔍 No Henge Found</h3>
                     <p><span class="highlight">Address:</span> ${data.address}</p>
-                    <p><span class="highlight">Street Bearing:</span> ${result.road_angle}° from North</p>
+                    <p><span class="highlight">Street Bearing:</span> ${data.road_bearing}° from North</p>
                     <div class="coordinates">
                         <strong>Coordinates:</strong> ${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lon.toFixed(6)}
                     </div>
