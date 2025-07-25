@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from hengefinder import search_for_henge
-from utils import get_coordinates, get_road_bearing, GeocodingError
+from utils import get_coordinates, get_road_bearing, GeocodingError, check_latitude
 from datetime import datetime
 import traceback
 
@@ -24,6 +24,10 @@ def check_henge():
         # Get coordinates first
         try:
             lat, lon = get_coordinates(address)
+            try:
+                check_latitude(lat)
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
             print(f"Coordinates: {lat}, {lon}")
         except GeocodingError as e:
             print(f"Geocoding error: {e}")

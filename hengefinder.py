@@ -218,7 +218,8 @@ if __name__ == "__main__":
     #address = "84 Thirlestane Rd, Edinburgh EH9 1AR, UK"
     
     
-    lat, lon = get_coordinates(address)
+    lat, lon = get_coordinates("address")
+    check_latitude(lat)
     print(f"Coordinates: {lat}, {lon}")
     
     result = search_for_henge(lat, lon, datetime.today(), step_size=COARSE_SEARCH_STEP_DAYS)
