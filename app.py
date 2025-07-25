@@ -34,7 +34,7 @@ def check_henge():
             print(f"Unexpected error getting coordinates: {e}")
             return jsonify({'error': f'Error processing address: {str(e)}'}), 400
         
-        # Get road angle
+        # Get road bearing
         try:
             road_bearing = get_road_bearing(lat, lon)
             print(f"Road angle: {road_bearing}")
