@@ -1,131 +1,232 @@
 
-from geopy.geocoders import Nominatim
-from astral import  Observer, sun
-import math
 from datetime import datetime, timedelta
-import osmnx as ox
-from zoneinfo import ZoneInfo
-from timezonefinder import TimezoneFinder
+from utils import *
+from config import MATCH_THRESHOLD_DEG, MAX_DAYS_TO_SEARCH, COARSE_SEARCH_STEP_DAYS, TARGET_ALTITUDE_DEG
 
-def get_coordinates(address):
-    geolocator = Nominatim(user_agent="HengeFinder", timeout=10) #timeout is needed for some addresses
-    location = geolocator.geocode(address)
-    return (location.latitude, location.longitude)
 
-def get_timezone_from_coordinates(lat, lon):
-    tf = TimezoneFinder()
-    timezone_name = tf.timezone_at(lat=lat, lng=lon)
-    return ZoneInfo(timezone_name)
-
-def get_road_angle(lat, lon, dist=100, network_type="all"):
+    
+def search_for_henge(
+    lat: float, 
+    lon: float, 
+    date: datetime, 
+    match_threshold_deg: float=MATCH_THRESHOLD_DEG, 
+    step_size: int=COARSE_SEARCH_STEP_DAYS
+):
     """
-    Return the street‐bearing (degrees east of North) at the given address
-    by finding the nearest OSMnx edge and calculating bearing using flat earth approximation.
-    """
-    #TODO: This works for many streets, but is not always reliable. 
-    # Probably because of the kinds of other nodes it hits.
+    Check if a henge occurs for the latitude/longitude specified. 
     
-    # get a network around the point
-    G = ox.graph_from_point((lat, lon), dist=dist, network_type=network_type)
-
-    # find the single closest edge to our point
-    u, v, key = ox.distance.nearest_edges(G, X=lon, Y=lat)
+    Starts with a course search over days and then moves to a fine-grained search if required.
     
-    # get the coordinates of both endpoints
-    lat_1 = G.nodes[u]['y']
-    lon_1 = G.nodes[u]['x']
-    lat_2 = G.nodes[v]['y'] 
-    lon_2 = G.nodes[v]['x']
-
-    # We now have two points near the address, given by coordinates (lat, lon). 
-    # In theory, we could use basic trig, using the difference in latitudes and longitudes and use the arctan2 function to calculate the bearing.
-    # But the earth is not flat, so we have to scale the difference in longitudes by the cosine of the mean latitude (longitude lines converge at the poles).
-    # Latitude lines are parallel, so we can just use the difference in latitudes.
-    
-    delta_y = lat_2 - lat_1
-    mean_lat = math.radians((lat_1 + lat_2) / 2)
-    delta_x = (lon_2 - lon_1) * math.cos(mean_lat)
-
-    # calculate angle in radians
-    bearing_rad = math.atan2(delta_x, delta_y)
-    
-    # convert to degrees and normalize to 0-360
-    bearing_deg = math.degrees(bearing_rad)
-    bearing = (bearing_deg + 360) % 360
-
-    return bearing
-
-
-def get_horizon_azimuth(lat, lon, date, target_altitude_deg=0.5, search_window_minutes=20):
-    """
-    Find the azimuth of the sun at a given date, location, and  altitude (e.g. 0.5 degrees for the sun just visible on the horizon)
-    Returns the azimuth and the time of the event.
+    Args: 
+        lat: latitude
+        lon: longitude
+        date: start date of the search
+        match_threshold_deg: How close (in degrees) sun azimuth must be to road bearing (degrees) to be considered aligned
+        step_size: Days between coarse search dates
+        
+    Returns:
+        result (dict):
+            henge_found (bool)
+            henge_date (datetime)
+            sun_angle (float): Sun's azimuth angle in degrees
+            road_bearing (float): Road's bearing angle in degrees
+            days_searched (int): Number of days searched in the coarse search
     """
     
-    tz = get_timezone_from_coordinates(lat, lon)
-    obs = Observer(lat, lon)
-
-    # Get sunset time for date/location
-    s = sun.sun(obs, date)
-    sunset = s["sunset"].astimezone(tz)
-
-    # Search mins leading up to sunset for when the sun is at the target altitude
-    for minute in range(-search_window_minutes, 1):  # e.g. -20 to 0
-        exact_time = sunset + timedelta(minutes=minute)
-        alt = sun.elevation(obs, exact_time)
-
-        # Once the sun has dropped below the altitude we care about, return the azimuth and time
-        if alt < target_altitude_deg:
-            az = sun.azimuth(obs, exact_time)
-            return az, exact_time
-
-def check_viable_henge(address, starting_date = datetime.today(), match_threshold_deg = 0.5):
-    """
-    Check if a henge is possible at a given address, and returns the date of the first time the sun is aligned with the road if possible.
-    Args:
-        address: The address of the location to check
-        starting_date: The date to start searching for a henge
-        match_threshold_deg: The threshold for a match (road + sun) in degrees. 
-    """
-    try: 
-        lat, lon = get_coordinates(address)
-    except:
-        print(f"Error getting coordinates for {address}")
-        return None
+    road_bearing = get_road_bearing(lat, lon)
     
-    road_angle = get_road_angle(lat, lon)
-    print(f"Street bearing for {address} is {road_angle} degrees from North.")
+    az_today, exact_time_today    = get_horizon_azimuth(lat, lon, date, target_altitude_deg=TARGET_ALTITUDE_DEG)
+    az_tomorrow, exact_time_tomorrow = get_horizon_azimuth(lat, lon, date + timedelta(days=1), target_altitude_deg=TARGET_ALTITUDE_DEG)
+
+    # If we couldn't get the azimuth for today or tomorrow, return an error
+    if az_today == None or az_tomorrow == None: 
+        print('Error getting azimuth for today / tomorrow')
+        return {'error': 'Could not calculate sun position'}
     
-    # Check if the sun is ever at the road bearing
-    # We only need to search ~6 months to cover the full range of sunset azimuths
-    max_days_to_search = 180
-    henge_found = False
+    # Determine the direction of the sun's movement
+    sun_direction = np.sign(az_tomorrow - az_today)
+
+    # Calculate the closest alignment direction (that is, the direction the sun needs to go in, to align with the road)
+    bearing_difference, bearing_direction = get_closest_alignment_direction(az_today, road_bearing)
     
-    for i in range(max_days_to_search):
-        date = starting_date + timedelta(days=i)
-        try:
-            sun_angle, when = get_horizon_azimuth(lat, lon, date, target_altitude_deg=0.5)
-            angle_diff = abs(sun_angle - road_angle)
-            angle_diff_opposite = abs(angle_diff - 180) # necessary, e.g. if sun is 270, road is 90, that should count as a match.
+    print(f"road_bearing {road_bearing}")
+    print(f"az_today {az_today}")
+    print(f"bearing_difference {bearing_difference}")
+    
+    # Check if the sun is aligned with the road today or tomorrow, before we start our main search.
+    for az, exact_time in [(az_today, exact_time_today), (az_tomorrow, exact_time_tomorrow)]:
+        if check_match(az, road_bearing, match_threshold_deg):
+            return {
+                'henge_found': True,
+                'henge_date': exact_time.isoformat(),
+                'sun_angle': round(az, 2),
+                'road_bearing': round(road_bearing, 2),
+                'days_searched': 0
+            }
+                    
+
+    def _search_over_days(step: int = COARSE_SEARCH_STEP_DAYS) -> dict:
+        """
+        Search for a henge over a range of days with a coarse search step.
+        If we may have skipped a potential alignment, we go back and do a fine grained search.
+        
+        Conditions that trigger a fine grained search: 
+            1) We were headed towards the alignment, but we've made a U-turn (e.g. aiming for 90˚ road bearing, we were at 85˚ sun azimuth, and now we're at 80˚ sun azimuth)
+            2) We've skipped over alignmentment. 
+        """
+        # Declare nonlocal variables that will be modified
+        nonlocal sun_direction
+        nonlocal bearing_direction
+        
+        print(f"Searching with step {step}")
+
+        # Initialize values from outer scope
+        start_date = date
+        end_date = date + timedelta(days=MAX_DAYS_TO_SEARCH)
+        prev_date = start_date
+        prev_az = az_tomorrow
+        prev_sun_direction = sun_direction
+        prev_bearing_direction = bearing_direction
+        curr_date = prev_date + timedelta(days=step)
+
+        while curr_date <= end_date:
+            az_curr_date, exact_time = get_horizon_azimuth(lat, lon, curr_date, target_altitude_deg=TARGET_ALTITUDE_DEG)
+            if az_curr_date == None:
+                print('Could not get azimuth, skipping...')
+                curr_date = curr_date + timedelta(days=1) # Just moving forward 1 day. keeping the "previous" day info the same. 
+                continue
+            print(round(az_curr_date, 2))
             
-            if min(angle_diff, angle_diff_opposite) < match_threshold_deg:  
-                print(f"Aligned sunset at {address} at {when}. Street bearing: {road_angle:0.2f}°, Sun bearing: {sun_angle:0.2f}°.")
-                henge_found = True
-                break
-        except: #TODO: can't get for some dates
-            print(f"Error getting sun angle for {date}")
-            continue
-    
-    if not henge_found:
-        print(f"No henge found for {address} in the next {max_days_to_search} days.")
+            sun_direction = np.sign(az_curr_date - prev_az)
 
+            # Calculate the closest alignment direction for current azimuth
+            bearing_diff_curr, bearing_direction = get_closest_alignment_direction(az_curr_date, road_bearing)
+            
+            # Check if we found a match
+            if abs(bearing_diff_curr) < match_threshold_deg:
+                return {
+                    'henge_found': True,
+                    'henge_date': exact_time.isoformat(),
+                    'sun_angle': round(az_curr_date, 2),
+                    'road_bearing': round(road_bearing, 2),
+                }
+            
+            # Check conditions that indicate we missed alignments, that should trigger a fine grained search
+            if (
+                prev_sun_direction == bearing_direction and sun_direction != bearing_direction # 1st condition - if we've made a U-turn, do a fine grained search because we may have missed the alignment
+                ) or (
+                bearing_direction != prev_bearing_direction # 2nd condition -we've skipped over the alignment. Uses Intermediate Value Theorem.
+                ):
+                    
+                # Do a fine grained search.
+                henge_found, henge_date, azimuth = search_daily_for_henge(
+                    start_date=prev_date + timedelta(days=1),
+                    end_date=curr_date - timedelta(days=1),
+                    lat=lat,
+                    lon=lon,
+                    road_bearing=road_bearing,
+                    target_altitude_deg=TARGET_ALTITUDE_DEG
+                )
+                
+            
+                if henge_found == True: 
+                    return {
+                    'henge_found': henge_found,
+                    'henge_date': henge_date.isoformat() if henge_date else None,
+                    'sun_angle': round(azimuth, 2) if azimuth else None,
+                    'road_bearing': round(road_bearing, 2),
+                }
+        
+            #Update for next iteration:
+            prev_sun_direction = sun_direction
+            prev_az= az_curr_date
+            prev_date = curr_date
+            curr_date = prev_date + timedelta(days=step)
+
+        # If we get here, no henge was found in the search
+        return {
+            'henge_found': False,
+            'henge_date': None,
+            'sun_angle': None,
+            'road_bearing': round(road_bearing, 2),
+            'days_searched': MAX_DAYS_TO_SEARCH
+        }
+        
+    result = _search_over_days(step=step_size)
+    
+    return result
+
+def search_daily_for_henge(
+        start_date: datetime,
+        end_date: datetime,
+        lat: float,
+        lon: float,
+        road_bearing: float,
+        target_altitude_deg: float
+    ):
+    """ 
+    Iterate every day within a specified period and check if any day is one where a henge occurs. 
+    """
+    curr_date = start_date
+    
+    while curr_date <= end_date:
+        # Get the azimuth/time for the current date
+        az_curr_date, exact_time = get_horizon_azimuth(lat, lon, curr_date, target_altitude_deg=target_altitude_deg)
+        if az_curr_date is None:
+            print("Error getting azimuth for date")
+            curr_date = curr_date + timedelta(days=1)
+            continue
+        
+        print(round(az_curr_date, 2))
+        
+        # Check if the azimuth matches the road bearing
+        henge_found = check_match(az_curr_date, road_bearing)
+        
+        if henge_found:
+            return henge_found, exact_time, az_curr_date
+        
+        curr_date = curr_date + timedelta(days=1)
+    
+    # If we got here, no henge was found.
+    return False, None, None
+
+    
 if __name__ == "__main__":
     
-    address = "211 E 43rd St NYC" #Reference for manhattanhenge
-    # address = "493 Eastern Pkwy, Brooklyn, NY 11225"
-    # address = "601-615 E 76th St, Chicago, IL"
-    # address = "3131 Market St, Philadelphia, PA 19104"
+    address = "211 E 43rd St NYC" # Reference for manhattanhenge
+    #address = "601-615 E 76th St, Chicago, IL" # Reference for chicagohenge
+    #address = "3131 Market St, Philadelphia, PA 19104"
 
-    check_viable_henge(address, datetime.today())
-
+    #address = "493 Eastern Pkwy, Brooklyn, NY 11225"
+    #address = "594-598 Broadway, Brooklyn, NY 11206"
+    #address = "43 Front St E, Toronto, ON M5E 1B3, Canada"
+    #address = "701-651 E Tudor Rd, Anchorage, AK 99503"
+    #address = "84 Thirlestane Rd, Edinburgh EH9 1AR, UK"
     
+    
+    lat, lon = get_coordinates(address)
+    print(f"Coordinates: {lat}, {lon}")
+    
+    result = search_for_henge(lat, lon, datetime.today(), step_size=COARSE_SEARCH_STEP_DAYS)
+    if result and 'henge_found' in result:
+        if result['henge_found']:
+            print(f"Henge found! Date: {result['henge_date']}, sun_angle = {result['sun_angle']}, road_bearing = {result['road_bearing']}")
+        else:
+            print(f"No henge found after searching {result['days_searched']} days.")
+    elif result and 'error' in result:
+        print(f"Error: {result['error']}")
+    else:
+        print("Error occurred during search.")
+        
+    # except GeocodingError as e:
+    #     print(f"Geocoding error: {e}")
+    
+        
+        # TODO: 
+        ###########
+        # restrict latitudes
+        # map out the sun's path over the year
+        # error handling for short, windy streets
+        # timezone issue. try Haarlemmerweg, 1014 DA Amsterdam, Netherlands
+        #something up with the hengedate returned -- is it a date late? look at output. 
+        #Update README.md
