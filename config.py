@@ -6,6 +6,7 @@ MATCH_THRESHOLD_DEG = 0.5   # How close (in degrees) sun must be to road bearing
 # Search parameters  
 MAX_DAYS_TO_SEARCH = 365    # How many days to search forward
 COARSE_SEARCH_STEP_DAYS = 30 # Days between coarse search points
+FINE_SEARCH_WINDOW_DAYS = 7  # Days to search backwards when coarse match is found
 
 # Road detection parameters
 ROAD_SEARCH_RADIUS_M = 100  # Meters to search for nearby roads to get road bearing

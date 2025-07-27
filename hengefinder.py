@@ -1,7 +1,7 @@
 
 from datetime import datetime, timedelta
 from utils import *
-from config import MATCH_THRESHOLD_DEG, MAX_DAYS_TO_SEARCH, COARSE_SEARCH_STEP_DAYS, TARGET_ALTITUDE_DEG
+from config import MATCH_THRESHOLD_DEG, MAX_DAYS_TO_SEARCH, COARSE_SEARCH_STEP_DAYS, TARGET_ALTITUDE_DEG, FINE_SEARCH_WINDOW_DAYS
 
     
 def search_for_henge(
@@ -107,14 +107,29 @@ def search_for_henge(
             
             # Check if we found a match
             if abs(bearing_diff_curr) < match_threshold_deg:
-                tzname = exact_time.tzname() if exact_time and exact_time.tzinfo else None
-                time_str = exact_time.strftime('%Y-%m-%d %H:%M %Z') if exact_time else None
+                # Found a potential henge in coarse search, but we need to do a fine-grained search
+                # to find the earliest henge date in the previous FINE_SEARCH_WINDOW_DAYS
+                fine_search_start = curr_date - timedelta(days=FINE_SEARCH_WINDOW_DAYS)
+                fine_search_end = curr_date
+                                
+                henge_found, henge_date, azimuth = search_daily_for_henge(
+                    start_date=fine_search_start,
+                    end_date=fine_search_end,
+                    lat=lat,
+                    lon=lon,
+                    road_bearing=road_bearing,
+                    target_altitude_deg=TARGET_ALTITUDE_DEG
+                )
+                
+                # We should always find a henge since curr_date is included in the search
+                tzname = henge_date.tzname() if henge_date and henge_date.tzinfo else None
+                time_str = henge_date.strftime('%Y-%m-%d %H:%M %Z') if henge_date else None
                 return {
                     'henge_found': True,
-                    'henge_date': exact_time.isoformat(),
+                    'henge_date': henge_date.isoformat(),
                     'henge_time_local_str': time_str,
                     'henge_timezone': tzname,
-                    'sun_angle': round(az_curr_date, 2),
+                    'sun_angle': round(azimuth, 2),
                     'road_bearing': round(road_bearing, 2),
                 }
             
