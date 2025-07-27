@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils import get_coordinates, get_road_angle, get_horizon_azimuth
+from utils import get_coordinates, get_road_bearing, get_horizon_azimuth
 
 def plot_azimuth_over_year(address, num_days=365, start_date=None):
     """
@@ -13,7 +13,7 @@ def plot_azimuth_over_year(address, num_days=365, start_date=None):
     if start_date is None:
         start_date = datetime.today()
     lat, lon = get_coordinates(address)
-    road_angle = get_road_angle(lat, lon)
+    road_angle = get_road_bearing(lat, lon)
     azimuths = []
     dates = []
     for i in range(num_days):

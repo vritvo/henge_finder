@@ -27,6 +27,19 @@ def get_coordinates(address):
     
     return (location.latitude, location.longitude)
 
+def get_standardized_address(address):
+    """
+    Get a standardized address
+    """
+    
+    geolocator = Nominatim(user_agent="HengeFinder", timeout=10)
+    location = geolocator.geocode(address)
+    
+    if location is None:
+        raise GeocodingError(f"Could not find coordinates for address: {address}")
+    
+    return location.address
+
 def check_latitude(lat, max_lat=60): 
     """ 
     Make sure the latitude is within some range.  
@@ -49,9 +62,8 @@ def check_match(azimuth, road_bearing, match_threshold_deg=MATCH_THRESHOLD_DEG):
     Check if the sun's azimuth aligns with the road bearing within the threshold.
     """
     angle_diff = abs(azimuth - road_bearing)
-    angle_diff_opposite = abs(angle_diff - 180)
     
-    if min(angle_diff, angle_diff_opposite) < match_threshold_deg:
+    if angle_diff < match_threshold_deg:
         return True
     else:
         return False  
@@ -91,6 +103,10 @@ def get_road_bearing(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="all"):
     bearing_deg = math.degrees(bearing_rad)
     bearing = (bearing_deg + 360) % 360
 
+    #put in 180-360 range, since the sun sets in the west (and if a road bearing is, for e.g, 90, it's fine to say 270)
+    if bearing < 180:
+        bearing = bearing + 180
+
     return bearing
 
 def get_closest_alignment_direction(
@@ -100,23 +116,16 @@ def get_closest_alignment_direction(
     Calculate the shortest angular difference between sun azimuth and road angle.
     
     Args:
-        azimuth: Sun's azimuth angle in degrees
-        road_bearing: Road's bearing angle in degrees
+        azimuth: Sun's azimuth angle in degrees (0-360 range, but in practice 180-360 because sun sets in the west)
+        road_bearing: Road's bearing angle in degrees (180-360 range)
         
     Returns:
         tuple (bearing_difference, direction_sign)
-            - bearing_difference: Angular difference in degrees (-180 to 180)
+            - bearing_difference: Angular difference in degrees 
             - direction_sign: 1 if road is clockwise from sun, -1 if counterclockwise
     """
-    # Calculate the shortest angular difference, accounting for both directions
-    angle_diff = abs(azimuth - road_bearing)
-    angle_diff_opposite = abs(angle_diff - 180)
-    
-    # Find which direction is closer
-    if angle_diff <= angle_diff_opposite:
-        bearing_difference = road_bearing - azimuth
-    else:
-        bearing_difference = (road_bearing + 180) - azimuth
+    # Calculate the angle difference 
+    bearing_difference = road_bearing - azimuth
     
     # Normalize to [-180, 180] range
     while bearing_difference > 180:

@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from hengefinder import search_for_henge
-from utils import get_coordinates, get_road_bearing, GeocodingError, check_latitude
+from utils import get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude
 from datetime import datetime
 import traceback
 
@@ -21,14 +21,16 @@ def check_henge():
         
         print(f"Processing address: {address}")
         
-        # Get coordinates first
+        # Get coordinates and standardized address first
         try:
             lat, lon = get_coordinates(address)
+            standardized_address = get_standardized_address(address)
             try:
                 check_latitude(lat)
             except ValueError as e:
                 return jsonify({'error': str(e)}), 400
             print(f"Coordinates: {lat}, {lon}")
+            print(f"Standardized address: {standardized_address}")
         except GeocodingError as e:
             print(f"Geocoding error: {e}")
             return jsonify({
@@ -54,7 +56,7 @@ def check_henge():
         print(f"Henge result: {result}")
         
         return jsonify({
-            'address': address,
+            'address': standardized_address,
             'coordinates': {'lat': lat, 'lon': lon},
             'road_bearing': round(road_bearing, 2),
             'result': result
