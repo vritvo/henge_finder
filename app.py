@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from hengefinder import search_for_henge
-from utils import get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude
-from datetime import datetime
+from utils import get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date
 import traceback
 
 app = Flask(__name__)
@@ -50,9 +49,11 @@ def check_henge():
                 'error': f"Could not determine the street direction at this location. This might happen if the address is not near a mapped road, or if the road data is incomplete. Try using a different address on the same street."
             }), 400
         
+        start_date = get_utc_start_date() #server is in UTC - standardizing.
+        
         # Check for henge
         print("Checking for henge...")
-        result = search_for_henge(lat, lon, datetime.today())
+        result = search_for_henge(lat, lon, start_date)
         print(f"Henge result: {result}")
         
         return jsonify({

@@ -8,7 +8,7 @@ from timezonefinder import TimezoneFinder
 from datetime import timedelta
 import numpy as np
 from config import MATCH_THRESHOLD_DEG, ROAD_SEARCH_RADIUS_M, TARGET_ALTITUDE_DEG, SEARCH_WINDOW_MINUTES
-from datetime import datetime
+from datetime import datetime, date
 
 class GeocodingError(Exception):
     """Raised when geocoding fails to find coordinates for an address."""
@@ -39,6 +39,15 @@ def get_standardized_address(address):
         raise GeocodingError(f"Could not find coordinates for address: {address}")
     
     return location.address
+
+
+def get_utc_start_date():
+    """
+    Get today's date in UTC (standardized)
+    """
+
+    today_utc = date.today()
+    return datetime(today_utc.year, today_utc.month, today_utc.day, hour=0, minute=0, second=0, microsecond=0, tzinfo=ZoneInfo("UTC"))
 
 def check_latitude(lat, max_lat=60): 
     """ 
@@ -158,7 +167,14 @@ def get_horizon_azimuth(
         obs = Observer(lat, lon)
 
         # Get sunset time for date/location
-        date_only = date.date()
+        # If date has a time zone (eg from server), convert to the target timezone.
+        if date.tzinfo is not None:
+            date_in_tz = date.astimezone(tz)
+            date_only = date_in_tz.date()
+        else:
+            # If naive datetime, assume it's in the target timezone
+            date_only = date.date()
+            
         s = sun.sun(obs, date_only, tzinfo=tz)
         sunset_time = s["sunset"]
     

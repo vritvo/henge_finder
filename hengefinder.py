@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from utils import *
 from config import MATCH_THRESHOLD_DEG, MAX_DAYS_TO_SEARCH, COARSE_SEARCH_STEP_DAYS, TARGET_ALTITUDE_DEG
 
-
     
 def search_for_henge(
     lat: float, 
@@ -222,7 +221,8 @@ if __name__ == "__main__":
     check_latitude(lat)
     print(f"Coordinates: {lat}, {lon}")
     
-    result = search_for_henge(lat, lon, datetime.today(), step_size=COARSE_SEARCH_STEP_DAYS)
+    start_date = get_utc_start_date()# Use UTC for consistent start dates (e.g. for server)
+    result = search_for_henge(lat, lon, start_date, step_size=COARSE_SEARCH_STEP_DAYS)
     if result and 'henge_found' in result:
         if result['henge_found']:
             print(f"Henge found! Date: {result['henge_date']}, sun_angle = {result['sun_angle']}, road_bearing = {result['road_bearing']}")
@@ -233,12 +233,4 @@ if __name__ == "__main__":
     else:
         print("Error occurred during search.")
         
-    # except GeocodingError as e:
-    #     print(f"Geocoding error: {e}")
-    
-        
-        # TODO: 
-        ###########
 
-        # error handling for short, windy streets
-        #Update README.md
