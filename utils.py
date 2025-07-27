@@ -158,8 +158,9 @@ def get_horizon_azimuth(
         obs = Observer(lat, lon)
 
         # Get sunset time for date/location
-        s = sun.sun(obs, date)
-        sunset_time = s["sunset"].astimezone(tz)
+        date_only = date.date()
+        s = sun.sun(obs, date_only, tzinfo=tz)
+        sunset_time = s["sunset"]
     
     except (ValueError, AttributeError) as e: 
         print(f"Could not get azimuth for {date}: {e}")

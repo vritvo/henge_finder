@@ -241,6 +241,4 @@ if __name__ == "__main__":
         ###########
 
         # error handling for short, windy streets
-        #something up with the hengedate returned -- is it a date late? look at output. 
         #Update README.md
-        # print out official address. something weird with different versions of 5th avenue. 
