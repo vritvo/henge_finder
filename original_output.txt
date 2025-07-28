@@ -1,0 +1,73 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://192.168.1.150:8080
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 979-019-780
+127.0.0.1 - - [28/Jul/2025 17:53:34] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [28/Jul/2025 17:53:43] "POST /check_henge HTTP/1.1" 200 -
+Processing address: 211 E 43rd St, NYC
+    📍 Nominatim geocoding took: 1.082s
+    📍 get_coordinates total: 1.095s
+⏱️  get_coordinates took: 1.096s
+Coordinates: 40.7512527, -73.9732065
+Standardized address: Soba Totto, 211, East 43rd Street, Turtle Bay, Manhattan Community Board 6, Manhattan, New York County, City of New York, New York, 10017, United States
+    🗺️  OSMnx graph_from_point took: 0.821s
+    🗺️  OSMnx nearest_edges took: 0.002s
+    🗺️  get_road_bearing total: 0.823s
+⏱️  get_road_bearing took: 0.823s
+Road angle: 299.584550048707
+Checking for henge...
+    🗺️  OSMnx graph_from_point took: 0.308s
+    🗺️  OSMnx nearest_edges took: 0.002s
+    🗺️  get_road_bearing total: 0.311s
+    🧭 get_road_bearing in search_for_henge: 0.311s
+2025-07-28
+2025-07-29
+    ☀️ Initial horizon_azimuth calls: 0.490s
+road_bearing 299.584550048707
+az_today 295.50651980038344
+bearing_difference 4.078030248323557
+Searching with step 30
+2025-08-27
+283.37
+2025-09-26
+268.39
+2025-10-26
+253.55
+2025-11-25
+242.26
+2025-12-25
+238.53
+2026-01-24
+244.27
+2026-02-23
+256.89
+2026-03-25
+272.3
+2026-04-24
+287.05
+2026-05-24
+297.98
+2026-06-23
+301.81
+2026-05-25
+298.24
+2026-05-26
+298.48
+2026-05-27
+298.73
+2026-05-28
+298.96
+2026-05-29
+299.19
+    📅 search_daily_for_henge took: 1.196s
+    🔍 _search_over_days took: 3.810s
+    ⏱️  search_for_henge total: 4.610s
+⏱️  search_for_henge took: 4.610s
+Henge result: {'henge_found': True, 'henge_date': '2026-05-28T20:13:47.764362-04:00', 'henge_time_local_str': '2026-05-28 20:13 EDT', 'henge_timezone': 'EDT', 'sun_angle': 299.19, 'road_bearing': 299.58}
+⏱️  Total check_henge took: 7.314s
