@@ -63,7 +63,7 @@ def check_henge():
         # Check for henge
         print("Checking for henge...")
         henge_start_time = time.time()
-        result = search_for_henge(lat, lon, start_date)
+        result = search_for_henge(lat, lon, start_date, road_bearing=road_bearing)
         henge_end_time = time.time()
         print(f"⏱️  search_for_henge took: {henge_end_time - henge_start_time:.3f}s")
         print(f"Henge result: {result}")

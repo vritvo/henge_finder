@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from utils import *
 from config import MATCH_THRESHOLD_DEG, MAX_DAYS_TO_SEARCH, COARSE_SEARCH_STEP_DAYS, TARGET_ALTITUDE_DEG, FINE_SEARCH_WINDOW_DAYS
 import time
+from typing import Optional
 
 
 def search_for_henge(
@@ -10,7 +11,8 @@ def search_for_henge(
     lon: float,
     date: datetime,
     match_threshold_deg: float=MATCH_THRESHOLD_DEG, 
-    step_size: int=COARSE_SEARCH_STEP_DAYS
+    step_size: int=COARSE_SEARCH_STEP_DAYS,
+    road_bearing: Optional[float] = None,
 ):
     """
     Check if a henge occurs for the latitude/longitude specified.
@@ -34,10 +36,11 @@ def search_for_henge(
     """
     start_time = time.time()
 
-    bearing_start = time.time()
-    road_bearing = get_road_bearing(lat, lon)
-    bearing_end = time.time()
-    print(f"    🧭 get_road_bearing in search_for_henge: {bearing_end - bearing_start:.3f}s")
+    if road_bearing is None:
+        bearing_start = time.time()
+        road_bearing = get_road_bearing(lat, lon)
+        bearing_end = time.time()
+        print(f"    🧭 get_road_bearing in search_for_henge: {bearing_end - bearing_start:.3f}s")
 
     horizon_start = time.time()
     az_today, exact_time_today    = get_horizon_azimuth(lat, lon, date, target_altitude_deg=TARGET_ALTITUDE_DEG)
