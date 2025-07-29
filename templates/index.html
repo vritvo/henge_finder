@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Henge Finder</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * {
             margin: 0;
@@ -26,7 +28,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
             padding: 40px;
-            max-width: 600px;
+            max-width: 800px;
             width: 100%;
         }
 
@@ -217,6 +219,26 @@
             color: #084969;
             margin-bottom: 5px;
         }
+
+        .map-container {
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e1e5e9;
+        }
+
+        #map {
+            height: 300px;
+            width: 100%;
+        }
+
+        .map-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-top: 1px solid #e1e5e9;
+            font-size: 0.9em;
+            color: #665163;
+        }
     </style>
 </head>
 <body>
@@ -244,9 +266,80 @@
         </div>
 
         <div class="result" id="result"></div>
+        
+        <div class="map-container" id="mapContainer" style="display: none;">
+            <div id="map"></div>
+            <div class="map-info">
+                <strong>Map Legend:</strong> Red marker shows your address. Blue arrow shows the calculated road bearing direction.
+            </div>
+        </div>
     </div>
 
     <script>
+        let map = null;
+        let marker = null;
+        let bearingArrow = null;
+
+        // Function to create and display the map
+        function displayMap(lat, lon, roadBearing) {
+            const mapContainer = document.getElementById('mapContainer');
+            mapContainer.style.display = 'block';
+            
+            // Initialize map if it doesn't exist
+            if (!map) {
+                map = L.map('map').setView([lat, lon], 18);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+            } else {
+                map.setView([lat, lon], 18);
+                map.eachLayer((layer) => {
+                    if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+                        map.removeLayer(layer);
+                    }
+                });
+            }
+            
+            // Add marker for the address
+            marker = L.marker([lat, lon]).addTo(map);
+            marker.bindPopup('Your Address').openPopup();
+            
+            // Calculate arrow endpoints for bearing visualization
+            const arrowLength = 0.001; // Length of arrow in degrees
+            const bearingRad = (roadBearing * Math.PI) / 180;
+            
+            const endLat = lat + (arrowLength * Math.cos(bearingRad));
+            const endLon = lon + (arrowLength * Math.sin(bearingRad));
+            
+            // Create arrow line
+            bearingArrow = L.polyline([[lat, lon], [endLat, endLon]], {
+                color: '#007bff',
+                weight: 4,
+                opacity: 0.8
+            }).addTo(map);
+            
+            // Add arrowhead
+            const arrowheadLength = 0.0003;
+            const arrowheadAngle = Math.PI / 6; // 30 degrees
+            
+            const arrowhead1Lat = endLat - (arrowheadLength * Math.cos(bearingRad - arrowheadAngle));
+            const arrowhead1Lon = endLon - (arrowheadLength * Math.sin(bearingRad - arrowheadAngle));
+            const arrowhead2Lat = endLat - (arrowheadLength * Math.cos(bearingRad + arrowheadAngle));
+            const arrowhead2Lon = endLon - (arrowheadLength * Math.sin(bearingRad + arrowheadAngle));
+            
+            L.polyline([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]], {
+                color: '#007bff',
+                weight: 4,
+                opacity: 0.8
+            }).addTo(map);
+            
+            L.polyline([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]], {
+                color: '#007bff',
+                weight: 4,
+                opacity: 0.8
+            }).addTo(map);
+        }
+
         document.getElementById('hengeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -259,6 +352,7 @@
             submitBtn.disabled = true;
             loading.style.display = 'block';
             result.style.display = 'none';
+            document.getElementById('mapContainer').style.display = 'none';
             
             try {
                 const response = await fetch('/check_henge', {
@@ -332,6 +426,9 @@
             // Set the content
             resultDiv.innerHTML = html;
             resultDiv.style.display = 'block';
+            
+            // Display the map with bearing arrow
+            displayMap(data.coordinates.lat, data.coordinates.lon, data.road_bearing);
         }
 
         function displayError(message) {
@@ -360,6 +457,8 @@
             resultDiv.appendChild(errorDiv);
             resultDiv.style.display = 'block';
             
+            // Hide the map when there's an error
+            document.getElementById('mapContainer').style.display = 'none';
         }
 
         function formatDate(dateString) {
