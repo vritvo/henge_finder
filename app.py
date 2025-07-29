@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from hengefinder import search_for_henge
-from utils import get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date
+from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date
 import traceback
 import time
 
@@ -25,11 +25,12 @@ def check_henge():
         # Get coordinates and standardized address first
         try:
             coords_start_time = time.time()
-            lat, lon = get_coordinates(address)
+            location = get_location(address)
+            lat, lon = get_coordinates(location)
             coords_end_time = time.time()
             print(f"⏱️  get_coordinates took: {coords_end_time - coords_start_time:.3f}s")
 
-            standardized_address = get_standardized_address(address)
+            standardized_address = get_standardized_address(location)
             try:
                 check_latitude(lat)
             except ValueError as e:

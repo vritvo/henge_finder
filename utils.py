@@ -15,36 +15,27 @@ class GeocodingError(Exception):
     """Raised when geocoding fails to find coordinates for an address."""
     pass
 
-def get_coordinates(address):
-    """
-    Convert an address to latitude and longitude coordinates using geocoding.
-    """
-    start_time = time.time()
-
+def get_location(address):
     geolocator = Nominatim(user_agent="HengeFinder", timeout=10) #longer timeout is needed for some addresses
     geocode_start = time.time()
     location = geolocator.geocode(address)
     geocode_end = time.time()
-
     if location is None:
         raise GeocodingError(f"Could not find coordinates for address: {address}")
-
-    end_time = time.time()
     print(f"    📍 Nominatim geocoding took: {geocode_end - geocode_start:.3f}s")
-    print(f"    📍 get_coordinates total: {end_time - start_time:.3f}s")
+    return location
+
+def get_coordinates(location):
+    """
+    Convert a location to latitude and longitude coordinates using geocoding.
+    """
     
     return (location.latitude, location.longitude)
 
-def get_standardized_address(address):
+def get_standardized_address(location):
     """
     Get a standardized address
     """
-
-    geolocator = Nominatim(user_agent="HengeFinder", timeout=10)
-    location = geolocator.geocode(address)
-
-    if location is None:
-        raise GeocodingError(f"Could not find coordinates for address: {address}")
 
     return location.address
 
