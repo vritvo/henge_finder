@@ -164,8 +164,8 @@ def get_closest_alignment_direction(
 
 
 def get_horizon_azimuth(
-    lat: float, 
-    lon: float, 
+    tz: ZoneInfo,
+    obs: Observer,
     date: datetime, 
     target_altitude_deg: float=TARGET_ALTITUDE_DEG, 
     search_window_minutes: int=SEARCH_WINDOW_MINUTES
@@ -181,8 +181,6 @@ def get_horizon_azimuth(
     """
     try:
         print(date.date())
-        tz = get_timezone_from_coordinates(lat, lon)
-        obs = Observer(lat, lon)
 
         # Get sunset time for date/location
         # If date has a time zone (eg from server), convert to the target timezone.

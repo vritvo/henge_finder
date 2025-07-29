@@ -42,9 +42,12 @@ def search_for_henge(
         bearing_end = time.time()
         print(f"    🧭 get_road_bearing in search_for_henge: {bearing_end - bearing_start:.3f}s")
 
+    tz = get_timezone_from_coordinates(lat, lon)
+    obs = Observer(lat, lon)
+
     horizon_start = time.time()
-    az_today, exact_time_today    = get_horizon_azimuth(lat, lon, date, target_altitude_deg=TARGET_ALTITUDE_DEG)
-    az_tomorrow, exact_time_tomorrow = get_horizon_azimuth(lat, lon, date + timedelta(days=1), target_altitude_deg=TARGET_ALTITUDE_DEG)
+    az_today, exact_time_today    = get_horizon_azimuth(tz, obs, date, target_altitude_deg=TARGET_ALTITUDE_DEG)
+    az_tomorrow, exact_time_tomorrow = get_horizon_azimuth(tz, obs, date + timedelta(days=1), target_altitude_deg=TARGET_ALTITUDE_DEG)
     horizon_end = time.time()
     print(f"    ☀️ Initial horizon_azimuth calls: {horizon_end - horizon_start:.3f}s")
 
@@ -104,7 +107,7 @@ def search_for_henge(
         curr_date = prev_date + timedelta(days=step)
 
         while curr_date <= end_date:
-            az_curr_date, exact_time = get_horizon_azimuth(lat, lon, curr_date, target_altitude_deg=TARGET_ALTITUDE_DEG)
+            az_curr_date, exact_time = get_horizon_azimuth(tz, obs, curr_date, target_altitude_deg=TARGET_ALTITUDE_DEG)
             if az_curr_date == None:
                 print('Could not get azimuth, skipping...')
                 curr_date = curr_date + timedelta(days=1) # Just moving forward 1 day. keeping the "previous" day info the same. 
@@ -126,8 +129,8 @@ def search_for_henge(
                 henge_found, henge_date, azimuth = search_daily_for_henge(
                     start_date=fine_search_start,
                     end_date=fine_search_end,
-                    lat=lat,
-                    lon=lon,
+                    tz=tz,
+                    obs=obs,
                     road_bearing=road_bearing,
                     target_altitude_deg=TARGET_ALTITUDE_DEG
                 )
@@ -155,8 +158,8 @@ def search_for_henge(
                 henge_found, henge_date, azimuth = search_daily_for_henge(
                     start_date=prev_date + timedelta(days=1),
                     end_date=curr_date - timedelta(days=1),
-                    lat=lat,
-                    lon=lon,
+                    tz=tz,
+                    obs=obs,
                     road_bearing=road_bearing,
                     target_altitude_deg=TARGET_ALTITUDE_DEG
                 )
@@ -204,8 +207,8 @@ def search_for_henge(
 def search_daily_for_henge(
         start_date: datetime,
         end_date: datetime,
-        lat: float,
-        lon: float,
+        tz: ZoneInfo,
+        obs: Observer,
         road_bearing: float,
         target_altitude_deg: float
     ):
@@ -217,7 +220,7 @@ def search_daily_for_henge(
 
     while curr_date <= end_date:
         # Get the azimuth/time for the current date
-        az_curr_date, exact_time = get_horizon_azimuth(lat, lon, curr_date, target_altitude_deg=target_altitude_deg)
+        az_curr_date, exact_time = get_horizon_azimuth(tz, obs, curr_date, target_altitude_deg=target_altitude_deg)
         if az_curr_date is None:
             print("Error getting azimuth for date")
             curr_date = curr_date + timedelta(days=1)
