@@ -6,6 +6,9 @@
     <title>Henge Finder</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-geoman@3.1.0/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/leaflet-geoman@3.1.0/dist/leaflet-geoman.min.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -239,6 +242,112 @@
             font-size: 0.9em;
             color: #665163;
         }
+
+        .bearing-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-top: 1px solid #e1e5e9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .bearing-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bearing-value {
+            font-weight: bold;
+            color: #084969;
+            font-size: 1.1em;
+        }
+
+        .bearing-value.adjusted {
+            color: #dc3545;
+        }
+
+        .bearing-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .bearing-btn {
+            padding: 8px 12px;
+            background: #7c4279;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .bearing-btn:hover {
+            background: #6a3767;
+        }
+
+        .bearing-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .reset-btn {
+            background: #6c757d;
+        }
+
+        .reset-btn:hover {
+            background: #5a6268;
+        }
+
+        .spinner-hint {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        /* Interactive arrow styling */
+        .interactive-arrow {
+            cursor: grab;
+            transition: opacity 0.2s;
+        }
+
+        .interactive-arrow:hover {
+            opacity: 1 !important;
+        }
+
+        .arrow-handle {
+            cursor: grab;
+            transition: all 0.1s ease-out;
+        }
+
+        .arrow-handle:hover {
+            transform: scale(1.2);
+            fill-opacity: 1 !important;
+        }
+
+        .arrow-handle.dragging {
+            transform: scale(1.3);
+            fill-color: #0056b3 !important;
+        }
+
+        body.grabbing {
+            cursor: grabbing !important;
+        }
+
+        body.grabbing .interactive-arrow,
+        body.grabbing .arrow-handle {
+            cursor: grabbing !important;
+        }
+
+
     </style>
 </head>
 <body>
@@ -255,7 +364,7 @@
         <form id="hengeForm">
             <div class="form-group">
                 <label for="address">Enter an address:</label>
-                <input type="text" id="address" name="address" placeholder="e.g., 211 E 43rd St, NYC" required>
+                <input type="text" id="address" name="address" placeholder="e.g., 251 W 42nd St, New York, NY 10036" required>
             </div>
             <button type="submit" id="submitBtn">Find Henge</button>
         </form>
@@ -268,9 +377,22 @@
         <div class="result" id="result"></div>
         
         <div class="map-container" id="mapContainer" style="display: none;">
+            <div class="spinner-hint">
+                💡 <strong>Adjust the arrow:</strong> Click and drag the blue arrow to align it with your street direction, then click "Calculate Henge" to find alignments.
+            </div>
             <div id="map"></div>
+            <div class="bearing-controls">
+                <div class="bearing-info">
+                    <span>Road Bearing:</span>
+                    <span class="bearing-value" id="bearingValue">0°</span>
+                </div>
+                <div class="bearing-buttons">
+                    <button class="bearing-btn" id="calculateHengeBtn">Calculate Henge</button>
+                    <button class="bearing-btn reset-btn" id="resetBtn">Reset to Original</button>
+                </div>
+            </div>
             <div class="map-info">
-                <strong>Map Legend:</strong> Red marker shows your address. Blue arrow shows the calculated road bearing direction.
+                <strong>Map Legend:</strong> Red marker shows your address. Blue arrow shows the road bearing direction (drag to adjust).
             </div>
         </div>
     </div>
@@ -279,11 +401,48 @@
         let map = null;
         let marker = null;
         let bearingArrow = null;
+        let originalBearing = 0;
+        let currentBearing = 0;
+        let currentAddress = null;
+        let currentCoordinates = null;
+        let isDragging = false;
+        let dragStartAngle = 0;
 
+        // Function to display address lookup results (without henge calculation)
+        function displayAddressLookup(data) {
+            const resultDiv = document.getElementById('result');
+            
+            let html = `
+                <h3>📍 Address Found</h3>
+                <p><span class="highlight">Address:</span> ${data.address}</p>
+                <p><span class="highlight">Initial Road Bearing:</span> ${data.road_bearing}° from North</p>
+                <div class="coordinates">
+                    <strong>Coordinates:</strong> ${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lon.toFixed(6)}
+                </div>
+                <p><em>Adjust the arrow on the map to align with your street direction, then click "Calculate Henge" to find alignments.</em></p>
+            `;
+            
+            resultDiv.innerHTML = html;
+            resultDiv.className = 'result success';
+            resultDiv.style.display = 'block';
+            
+            // Display the map with bearing arrow
+            displayMap(data.coordinates.lat, data.coordinates.lon, data.road_bearing);
+        }
+        
         // Function to create and display the map
         function displayMap(lat, lon, roadBearing) {
             const mapContainer = document.getElementById('mapContainer');
             mapContainer.style.display = 'block';
+            
+            // Store current data
+            currentAddress = document.getElementById('address').value;
+            currentCoordinates = { lat, lon };
+            originalBearing = roadBearing;
+            currentBearing = roadBearing;
+            
+            // Update bearing display
+            document.getElementById('bearingValue').textContent = `${roadBearing.toFixed(1)}°`;
             
             // Initialize map if it doesn't exist
             if (!map) {
@@ -291,6 +450,14 @@
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
+                
+                // Add event listeners for map interaction
+                map.on('mousedown', onMapMouseDown);
+                map.on('mousemove', onMapMouseMove);
+                map.on('mouseup', onMapMouseUp);
+                
+                // Add global mouse up handler
+                document.addEventListener('mouseup', onGlobalMouseUp);
             } else {
                 map.setView([lat, lon], 18);
                 map.eachLayer((layer) => {
@@ -304,40 +471,344 @@
             marker = L.marker([lat, lon]).addTo(map);
             marker.bindPopup('Your Address').openPopup();
             
-            // Calculate arrow endpoints for bearing visualization
-            const arrowLength = 0.001; // Length of arrow in degrees
-            const bearingRad = (roadBearing * Math.PI) / 180;
+            // Create interactive arrow
+            createInteractiveArrow(lat, lon, roadBearing);
+        }
+        
+        function createInteractiveArrow(lat, lon, bearing) {
+            // Use Turf.js to calculate the arrow endpoint with proper geodesic math
+            const arrowLength = 100; // Length in meters
+            const start = [lon, lat]; // Turf expects [lon, lat]
             
-            const endLat = lat + (arrowLength * Math.cos(bearingRad));
-            const endLon = lon + (arrowLength * Math.sin(bearingRad));
+            // Calculate the destination point using proper geodesic math
+            const destination = turf.destination(start, arrowLength, bearing, {units: 'meters'});
+            const endLon = destination.geometry.coordinates[0];
+            const endLat = destination.geometry.coordinates[1];
             
-            // Create arrow line
+            // Create arrow line with interactive styling
             bearingArrow = L.polyline([[lat, lon], [endLat, endLon]], {
                 color: '#007bff',
-                weight: 4,
-                opacity: 0.8
+                weight: 6,
+                opacity: 0.9,
+                className: 'interactive-arrow'
             }).addTo(map);
             
-            // Add arrowhead
-            const arrowheadLength = 0.0003;
-            const arrowheadAngle = Math.PI / 6; // 30 degrees
+            // Calculate arrowhead using Turf.js
+            const arrowheadLength = 30; // meters
+            const arrowheadAngle = 30; // degrees
             
-            const arrowhead1Lat = endLat - (arrowheadLength * Math.cos(bearingRad - arrowheadAngle));
-            const arrowhead1Lon = endLon - (arrowheadLength * Math.sin(bearingRad - arrowheadAngle));
-            const arrowhead2Lat = endLat - (arrowheadLength * Math.cos(bearingRad + arrowheadAngle));
-            const arrowhead2Lon = endLon - (arrowheadLength * Math.sin(bearingRad + arrowheadAngle));
+            // Calculate arrowhead points by going backwards from the destination
+            const arrowhead1 = turf.destination(destination, arrowheadLength, bearing + 180 - arrowheadAngle, {units: 'meters'});
+            const arrowhead2 = turf.destination(destination, arrowheadLength, bearing + 180 + arrowheadAngle, {units: 'meters'});
             
-            L.polyline([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]], {
+            const arrowhead1Lon = arrowhead1.geometry.coordinates[0];
+            const arrowhead1Lat = arrowhead1.geometry.coordinates[1];
+            const arrowhead2Lon = arrowhead2.geometry.coordinates[0];
+            const arrowhead2Lat = arrowhead2.geometry.coordinates[1];
+            
+            const arrowhead1Line = L.polyline([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]], {
+                color: '#007bff',
+                weight: 6,
+                opacity: 0.9
+            }).addTo(map);
+            
+            const arrowhead2Line = L.polyline([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]], {
+                color: '#007bff',
+                weight: 6,
+                opacity: 0.9
+            }).addTo(map);
+            
+            // Add a draggable handle at the arrow tip
+            const handle = L.circleMarker([endLat, endLon], {
+                radius: 12,
+                fillColor: '#007bff',
+                color: '#fff',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 0.9,
+                className: 'arrow-handle'
+            }).addTo(map);
+            
+            // Store references
+            bearingArrow.handle = handle;
+            bearingArrow.arrowhead1 = arrowhead1Line;
+            bearingArrow.arrowhead2 = arrowhead2Line;
+            bearingArrow.center = [lat, lon];
+        }
+        
+        function onLineCreated(e) {
+            if (e.shape !== 'Line') return;
+            
+            const line = e.layer;
+            const latlngs = line.getLatLngs();
+            
+            if (latlngs.length < 2) return;
+            
+            // Store the drawn line
+            drawnLine = line;
+            
+            // Calculate bearing using Turf.js
+            const start = [latlngs[0].lng, latlngs[0].lat]; // Turf expects [lon, lat]
+            const end = [latlngs[latlngs.length - 1].lng, latlngs[latlngs.length - 1].lat];
+            
+            const bearing = (turf.bearing(start, end) + 360) % 360; // 0° = North
+            
+            // Update current bearing
+            currentBearing = bearing;
+            
+            // Update display
+            const bearingElement = document.getElementById('bearingValue');
+            bearingElement.textContent = `${bearing.toFixed(1)}°`;
+            bearingElement.classList.add('adjusted');
+            
+            // Style the line
+            line.setStyle({
                 color: '#007bff',
                 weight: 4,
                 opacity: 0.8
-            }).addTo(map);
+            });
             
-            L.polyline([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]], {
-                color: '#007bff',
-                weight: 4,
-                opacity: 0.8
-            }).addTo(map);
+            // Add arrowhead to the end
+            addArrowheadToLine(line, bearing);
+        }
+        
+        function onLineRemoved(e) {
+            if (e.layer === drawnLine) {
+                drawnLine = null;
+                currentBearing = originalBearing;
+                
+                const bearingElement = document.getElementById('bearingValue');
+                bearingElement.textContent = `${originalBearing.toFixed(1)}°`;
+                bearingElement.classList.remove('adjusted');
+            }
+        }
+        
+        function updateArrow(bearing) {
+            if (!bearingArrow) return;
+            
+            const [lat, lon] = bearingArrow.center;
+            const arrowLength = 100; // meters
+            
+            // Use Turf.js to calculate the new arrow endpoint
+            const start = [lon, lat]; // Turf expects [lon, lat]
+            const destination = turf.destination(start, arrowLength, bearing, {units: 'meters'});
+            const endLon = destination.geometry.coordinates[0];
+            const endLat = destination.geometry.coordinates[1];
+            
+            // Update arrow line
+            bearingArrow.setLatLngs([[lat, lon], [endLat, endLon]]);
+            
+            // Calculate new arrowhead positions using Turf.js
+            const arrowheadLength = 30; // meters
+            const arrowheadAngle = 30; // degrees
+            
+            // Calculate arrowhead points by going backwards from the destination
+            const arrowhead1 = turf.destination(destination, arrowheadLength, bearing + 180 - arrowheadAngle, {units: 'meters'});
+            const arrowhead2 = turf.destination(destination, arrowheadLength, bearing + 180 + arrowheadAngle, {units: 'meters'});
+            
+            const arrowhead1Lon = arrowhead1.geometry.coordinates[0];
+            const arrowhead1Lat = arrowhead1.geometry.coordinates[1];
+            const arrowhead2Lon = arrowhead2.geometry.coordinates[0];
+            const arrowhead2Lat = arrowhead2.geometry.coordinates[1];
+            
+            // Update existing arrowhead lines
+            bearingArrow.arrowhead1.setLatLngs([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]]);
+            bearingArrow.arrowhead2.setLatLngs([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]]);
+            
+            // Update handle position smoothly
+            bearingArrow.handle.setLatLng([endLat, endLon]);
+            
+            // Update bearing display
+            const bearingElement = document.getElementById('bearingValue');
+            bearingElement.textContent = `${bearing.toFixed(1)}°`;
+            
+            // Show if bearing has been adjusted
+            if (Math.abs(bearing - originalBearing) > 0.1) {
+                bearingElement.classList.add('adjusted');
+            } else {
+                bearingElement.classList.remove('adjusted');
+            }
+        }
+        
+        function onMapMouseDown(e) {
+            if (!bearingArrow) return;
+            
+            const handleLatLng = bearingArrow.handle.getLatLng();
+            const distance = map.distance(e.latlng, handleLatLng);
+            
+            if (distance < 80) { // 80 pixels tolerance for easier interaction
+                isDragging = true;
+                document.body.classList.add('grabbing');
+                bearingArrow.handle.getElement().classList.add('dragging');
+                
+                // Prevent map dragging when interacting with arrow
+                e.originalEvent.stopPropagation();
+                e.originalEvent.preventDefault();
+                map.dragging.disable();
+            }
+        }
+        
+        function onMapMouseMove(e) {
+            if (!isDragging || !bearingArrow) return;
+            
+            // Prevent map dragging during arrow interaction
+            e.originalEvent.stopPropagation();
+            e.originalEvent.preventDefault();
+            
+            // Calculate bearing using Turf.js from center to mouse position
+            const [centerLat, centerLon] = bearingArrow.center;
+            const mouseLat = e.latlng.lat;
+            const mouseLon = e.latlng.lng;
+            
+            // Use Turf.js to calculate the true bearing
+            const start = [centerLon, centerLat]; // Turf expects [lon, lat]
+            const end = [mouseLon, mouseLat];
+            
+            const bearing = (turf.bearing(start, end) + 360) % 360; // 0° = North
+            
+            currentBearing = bearing;
+            updateArrow(currentBearing);
+        }
+        
+        function onMapMouseUp() {
+            if (isDragging) {
+                isDragging = false;
+                document.body.classList.remove('grabbing');
+                if (bearingArrow && bearingArrow.handle) {
+                    bearingArrow.handle.getElement().classList.remove('dragging');
+                }
+                
+                // Re-enable map dragging
+                map.dragging.enable();
+            }
+        }
+        
+        function onGlobalMouseUp() {
+            if (isDragging) {
+                isDragging = false;
+                document.body.classList.remove('grabbing');
+                if (bearingArrow && bearingArrow.handle) {
+                    bearingArrow.handle.getElement().classList.remove('dragging');
+                }
+                
+                // Re-enable map dragging
+                if (map) {
+                    map.dragging.enable();
+                }
+            }
+        }
+        
+
+        
+        async function calculateHenge() {
+            const calculateBtn = document.getElementById('calculateHengeBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            // Show loading state
+            calculateBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/check_henge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        address: currentAddress,
+                        road_bearing: currentBearing
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResult(data);
+                } else {
+                    try {
+                        displayError(data.error);
+                    } catch (error) {
+                        console.error('Error in displayError:', error);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                displayError('Network error. Please try again.');
+            } finally {
+                calculateBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+        
+
+
+        // Add event listeners for bearing adjustment buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('calculateHengeBtn').addEventListener('click', async function() {
+                if (Math.abs(currentBearing - originalBearing) < 0.1) {
+                    alert('No adjustment made. Please drag the arrow to change the bearing first, or click "Calculate Henge" to use the original bearing.');
+                }
+                
+                await calculateHenge();
+            });
+            
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                currentBearing = originalBearing;
+                updateArrow(originalBearing);
+                document.getElementById('bearingValue').classList.remove('adjusted');
+            });
+        });
+        
+        async function recalculateWithAdjustedBearing() {
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const useAdjustedBtn = document.getElementById('useAdjustedBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            useAdjustedBtn.disabled = true;
+            resetBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/check_henge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        address: currentAddress,
+                        road_bearing: currentBearing
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResult(data);
+                    // Update the original bearing to the adjusted one
+                    originalBearing = currentBearing;
+                } else {
+                    try {
+                        displayError(data.error);
+                    } catch (error) {
+                        console.error('Error in displayError:', error);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                displayError('Network error. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                useAdjustedBtn.disabled = false;
+                resetBtn.disabled = false;
+                loading.style.display = 'none';
+            }
         }
 
         document.getElementById('hengeForm').addEventListener('submit', async function(e) {
@@ -355,7 +826,7 @@
             document.getElementById('mapContainer').style.display = 'none';
             
             try {
-                const response = await fetch('/check_henge', {
+                const response = await fetch('/lookup_address', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -366,7 +837,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    displayResult(data);
+                    displayAddressLookup(data);
                 } else {
                     try {
                         displayError(data.error);
