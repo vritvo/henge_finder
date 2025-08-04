@@ -119,12 +119,22 @@ def get_road_bearing(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="all"):
     bearing = (bearing_deg + 360) % 360
 
     #put in 180-360 range, since the sun sets in the west (and if a road bearing is, for e.g, 90, it's fine to say 270)
-    if bearing < 180:
-        bearing = bearing + 180
+    bearing = normalize_bearing_to_180_360(bearing)
 
     end_time = time.time()
     print(f"    🗺️  get_road_bearing total: {end_time - start_time:.3f}s")
 
+    return bearing
+
+
+def normalize_bearing_to_180_360(bearing: float) -> float:
+    """
+    Normalize a bearing to the 180-360 degree range.
+    
+    Since the sun sets in the west, we prefer bearings in the 180-360 range.
+    """
+    if bearing < 180:
+        return bearing + 180
     return bearing
 
 def get_closest_alignment_direction(

@@ -254,7 +254,7 @@ if __name__ == "__main__":
     #address = "43 Front St E, Toronto, ON M5E 1B3, Canada"
     #address = "701-651 E Tudor Rd, Anchorage, AK 99503"
     #address = "84 Thirlestane Rd, Edinburgh EH9 1AR, UK"
-
+    #address = "s103 101, 1051 KT Amsterdam, Netherlands"
 
     lat, lon = get_coordinates("address")
     check_latitude(lat)

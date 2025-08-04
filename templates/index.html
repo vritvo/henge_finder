@@ -6,8 +6,6 @@
     <title>Henge Finder</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-geoman@3.1.0/dist/leaflet-geoman.css" />
-    <script src="https://unpkg.com/leaflet-geoman@3.1.0/dist/leaflet-geoman.min.js"></script>
     <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
     <style>
         * {
@@ -159,6 +157,13 @@
             display: block;
         }
 
+        .result.address {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            color: #084969;
+            display: block;
+        }
+
         .result.error {
             background: #fbe6ec;
             border: 1px solid #f5c6cb;
@@ -231,7 +236,7 @@
         }
 
         #map {
-            height: 300px;
+            height: 500px;
             width: 100%;
         }
 
@@ -303,6 +308,35 @@
             background: #5a6268;
         }
 
+        .main-action {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .main-btn {
+            padding: 18px 30px;
+            background: #7c4279;
+            color: #fff3ec;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s;
+            min-width: 200px;
+        }
+
+        .main-btn:hover {
+            transform: translateY(-2px);
+            background: #6a3767;
+        }
+
+        .main-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .spinner-hint {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -325,17 +359,10 @@
 
         .arrow-handle {
             cursor: grab;
-            transition: all 0.1s ease-out;
         }
 
         .arrow-handle:hover {
-            transform: scale(1.2);
             fill-opacity: 1 !important;
-        }
-
-        .arrow-handle.dragging {
-            transform: scale(1.3);
-            fill-color: #0056b3 !important;
         }
 
         body.grabbing {
@@ -366,19 +393,19 @@
                 <label for="address">Enter an address:</label>
                 <input type="text" id="address" name="address" placeholder="e.g., 251 W 42nd St, New York, NY 10036" required>
             </div>
-            <button type="submit" id="submitBtn">Find Henge</button>
+            <button type="submit" id="submitBtn">Step 1: Find Address</button>
         </form>
 
         <div class="loading" id="loading" style="display: none;">
             <div class="spinner"></div>
-            <p>Searching for henge alignment (may take a moment)...</p>
+            <p>May take a second...</p>
         </div>
 
         <div class="result" id="result"></div>
         
         <div class="map-container" id="mapContainer" style="display: none;">
             <div class="spinner-hint">
-                💡 <strong>Adjust the arrow:</strong> Click and drag the blue arrow to align it with your street direction, then click "Calculate Henge" to find alignments.
+                💡 <strong>Adjust the arrow:</strong> Click and drag the blue arrow to align it with your street direction.
             </div>
             <div id="map"></div>
             <div class="bearing-controls">
@@ -387,12 +414,14 @@
                     <span class="bearing-value" id="bearingValue">0°</span>
                 </div>
                 <div class="bearing-buttons">
-                    <button class="bearing-btn" id="calculateHengeBtn">Calculate Henge</button>
                     <button class="bearing-btn reset-btn" id="resetBtn">Reset to Original</button>
                 </div>
             </div>
             <div class="map-info">
                 <strong>Map Legend:</strong> Red marker shows your address. Blue arrow shows the road bearing direction (drag to adjust).
+            </div>
+            <div class="main-action">
+                <button class="main-btn" id="calculateHengeBtn">Step 2: Find when the sun sets down this street!</button>
             </div>
         </div>
     </div>
@@ -406,24 +435,20 @@
         let currentAddress = null;
         let currentCoordinates = null;
         let isDragging = false;
-        let dragStartAngle = 0;
 
         // Function to display address lookup results (without henge calculation)
         function displayAddressLookup(data) {
             const resultDiv = document.getElementById('result');
             
             let html = `
-                <h3>📍 Address Found</h3>
                 <p><span class="highlight">Address:</span> ${data.address}</p>
-                <p><span class="highlight">Initial Road Bearing:</span> ${data.road_bearing}° from North</p>
                 <div class="coordinates">
                     <strong>Coordinates:</strong> ${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lon.toFixed(6)}
                 </div>
-                <p><em>Adjust the arrow on the map to align with your street direction, then click "Calculate Henge" to find alignments.</em></p>
             `;
             
             resultDiv.innerHTML = html;
-            resultDiv.className = 'result success';
+            resultDiv.className = 'result address';
             resultDiv.style.display = 'block';
             
             // Display the map with bearing arrow
@@ -455,9 +480,6 @@
                 map.on('mousedown', onMapMouseDown);
                 map.on('mousemove', onMapMouseMove);
                 map.on('mouseup', onMapMouseUp);
-                
-                // Add global mouse up handler
-                document.addEventListener('mouseup', onGlobalMouseUp);
             } else {
                 map.setView([lat, lon], 18);
                 map.eachLayer((layer) => {
@@ -469,7 +491,6 @@
             
             // Add marker for the address
             marker = L.marker([lat, lon]).addTo(map);
-            marker.bindPopup('Your Address').openPopup();
             
             // Create interactive arrow
             createInteractiveArrow(lat, lon, roadBearing);
@@ -536,54 +557,9 @@
             bearingArrow.center = [lat, lon];
         }
         
-        function onLineCreated(e) {
-            if (e.shape !== 'Line') return;
-            
-            const line = e.layer;
-            const latlngs = line.getLatLngs();
-            
-            if (latlngs.length < 2) return;
-            
-            // Store the drawn line
-            drawnLine = line;
-            
-            // Calculate bearing using Turf.js
-            const start = [latlngs[0].lng, latlngs[0].lat]; // Turf expects [lon, lat]
-            const end = [latlngs[latlngs.length - 1].lng, latlngs[latlngs.length - 1].lat];
-            
-            const bearing = (turf.bearing(start, end) + 360) % 360; // 0° = North
-            
-            // Update current bearing
-            currentBearing = bearing;
-            
-            // Update display
-            const bearingElement = document.getElementById('bearingValue');
-            bearingElement.textContent = `${bearing.toFixed(1)}°`;
-            bearingElement.classList.add('adjusted');
-            
-            // Style the line
-            line.setStyle({
-                color: '#007bff',
-                weight: 4,
-                opacity: 0.8
-            });
-            
-            // Add arrowhead to the end
-            addArrowheadToLine(line, bearing);
-        }
+
         
-        function onLineRemoved(e) {
-            if (e.layer === drawnLine) {
-                drawnLine = null;
-                currentBearing = originalBearing;
-                
-                const bearingElement = document.getElementById('bearingValue');
-                bearingElement.textContent = `${originalBearing.toFixed(1)}°`;
-                bearingElement.classList.remove('adjusted');
-            }
-        }
-        
-        function updateArrow(bearing) {
+        function updateArrow(bearing, updateHandle = true) {
             if (!bearingArrow) return;
             
             const [lat, lon] = bearingArrow.center;
@@ -615,8 +591,10 @@
             bearingArrow.arrowhead1.setLatLngs([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]]);
             bearingArrow.arrowhead2.setLatLngs([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]]);
             
-            // Update handle position smoothly
-            bearingArrow.handle.setLatLng([endLat, endLon]);
+            // Only update handle position if not dragging
+            if (updateHandle) {
+                bearingArrow.handle.setLatLng([endLat, endLon]);
+            }
             
             // Update bearing display
             const bearingElement = document.getElementById('bearingValue');
@@ -639,7 +617,10 @@
             if (distance < 80) { // 80 pixels tolerance for easier interaction
                 isDragging = true;
                 document.body.classList.add('grabbing');
-                bearingArrow.handle.getElement().classList.add('dragging');
+                
+                // Remove the handle completely during dragging
+                map.removeLayer(bearingArrow.handle);
+                bearingArrow.handle = null;
                 
                 // Prevent map dragging when interacting with arrow
                 e.originalEvent.stopPropagation();
@@ -667,36 +648,38 @@
             const bearing = (turf.bearing(start, end) + 360) % 360; // 0° = North
             
             currentBearing = bearing;
-            updateArrow(currentBearing);
+            updateArrow(currentBearing, false); // Don't update handle during drag
         }
         
         function onMapMouseUp() {
             if (isDragging) {
                 isDragging = false;
                 document.body.classList.remove('grabbing');
-                if (bearingArrow && bearingArrow.handle) {
-                    bearingArrow.handle.getElement().classList.remove('dragging');
-                }
+                
+                // Recreate the handle at the arrow tip
+                const [lat, lon] = bearingArrow.center;
+                const arrowLength = 100; // meters
+                const start = [lon, lat];
+                const destination = turf.destination(start, arrowLength, currentBearing, {units: 'meters'});
+                const endLon = destination.geometry.coordinates[0];
+                const endLat = destination.geometry.coordinates[1];
+                
+                bearingArrow.handle = L.circleMarker([endLat, endLon], {
+                    radius: 12,
+                    fillColor: '#007bff',
+                    color: '#fff',
+                    weight: 3,
+                    opacity: 1,
+                    fillOpacity: 0.9,
+                    className: 'arrow-handle'
+                }).addTo(map);
                 
                 // Re-enable map dragging
                 map.dragging.enable();
             }
         }
         
-        function onGlobalMouseUp() {
-            if (isDragging) {
-                isDragging = false;
-                document.body.classList.remove('grabbing');
-                if (bearingArrow && bearingArrow.handle) {
-                    bearingArrow.handle.getElement().classList.remove('dragging');
-                }
-                
-                // Re-enable map dragging
-                if (map) {
-                    map.dragging.enable();
-                }
-            }
-        }
+
         
 
         
@@ -726,6 +709,29 @@
                 
                 if (response.ok) {
                     displayResult(data);
+                    // Replace interactive arrow with static arrows
+                    // Only show sun azimuth if henge was found
+                    if (data.result.henge_found) {
+                        replaceWithStaticArrows(data.road_bearing, data.result.sun_angle);
+                    } else {
+                        replaceWithStaticArrows(data.road_bearing, null);
+                    }
+                    // Hide the calculate button
+                    calculateBtn.style.display = 'none';
+                    
+                    // Hide interactive elements that are no longer needed
+                    const spinnerHint = document.querySelector('.spinner-hint');
+                    if (spinnerHint) spinnerHint.style.display = 'none';
+                    
+                    const bearingValue = document.getElementById('bearingValue');
+                    if (bearingValue) bearingValue.style.display = 'none';
+                    
+                    // Hide the entire bearing controls section
+                    const bearingControls = document.querySelector('.bearing-controls');
+                    if (bearingControls) bearingControls.style.display = 'none';
+                    
+                    const resetBtn = document.getElementById('resetBtn');
+                    if (resetBtn) resetBtn.style.display = 'none';
                 } else {
                     try {
                         displayError(data.error);
@@ -734,7 +740,6 @@
                     }
                 }
             } catch (error) {
-                console.error('Error:', error);
                 displayError('Network error. Please try again.');
             } finally {
                 calculateBtn.disabled = false;
@@ -742,15 +747,116 @@
             }
         }
         
+        function replaceWithStaticArrows(roadBearing, sunAzimuth) {
+            // Remove the interactive arrow
+            if (bearingArrow) {
+                map.removeLayer(bearingArrow);
+                if (bearingArrow.arrowhead1) map.removeLayer(bearingArrow.arrowhead1);
+                if (bearingArrow.arrowhead2) map.removeLayer(bearingArrow.arrowhead2);
+                if (bearingArrow.handle) map.removeLayer(bearingArrow.handle);
+            }
+            
+            // Remove mouse event listeners to prevent further interaction
+            map.off('mousedown', onMapMouseDown);
+            map.off('mousemove', onMapMouseMove);
+            map.off('mouseup', onMapMouseUp);
+            
+            // Clear the bearingArrow variable
+            bearingArrow = null;
+            
+            const lat = currentCoordinates.lat;
+            const lon = currentCoordinates.lon;
+            const arrowLength = 100; // meters
+            
+            // Create road bearing arrow (blue)
+            const roadStart = [lon, lat];
+            const roadDestination = turf.destination(roadStart, arrowLength, roadBearing, {units: 'meters'});
+            const roadEndLon = roadDestination.geometry.coordinates[0];
+            const roadEndLat = roadDestination.geometry.coordinates[1];
+            
+            const roadArrow = L.polyline([[lat, lon], [roadEndLat, roadEndLon]], {
+                color: '#007bff',
+                weight: 4,
+                opacity: 0.8
+            }).addTo(map);
+            
+            // Add road arrowhead
+            addStaticArrowhead(roadDestination, roadBearing, '#007bff');
+            
+            // Create sun azimuth line with circle (orange/red) - shorter than road bearing
+            // Only if sunAzimuth is provided (henge was found)
+            if (sunAzimuth !== null) {
+                const sunLineLength = 70; // meters (shorter than road bearing)
+                const sunStart = [lon, lat];
+                const sunDestination = turf.destination(sunStart, sunLineLength, sunAzimuth, {units: 'meters'});
+                const sunEndLon = sunDestination.geometry.coordinates[0];
+                const sunEndLat = sunDestination.geometry.coordinates[1];
+                
+                const sunLine = L.polyline([[lat, lon], [sunEndLat, sunEndLon]], {
+                    color: '#ff6b35',
+                    weight: 4,
+                    opacity: 0.8
+                }).addTo(map);
+                
+                // Add sun circle at the end
+                addSunCircle(sunDestination, '#ff6b35');
+            }
+            
+            // Update map legend
+            const mapInfo = document.querySelector('.map-info');
+            if (sunAzimuth !== null) {
+                mapInfo.innerHTML = '<strong>Map Legend:</strong> Blue marker shows your address. Blue arrow shows road bearing. Orange line shows sun azimuth.';
+            } else {
+                mapInfo.innerHTML = '<strong>Map Legend:</strong> Blue marker shows your address. Blue arrow shows road bearing.';
+            }
+        }
+        
+        function addStaticArrowhead(destination, bearing, color) {
+            const arrowheadLength = 30; // meters
+            const arrowheadAngle = 30; // degrees
+            
+            const arrowhead1 = turf.destination(destination, arrowheadLength, bearing + 180 - arrowheadAngle, {units: 'meters'});
+            const arrowhead2 = turf.destination(destination, arrowheadLength, bearing + 180 + arrowheadAngle, {units: 'meters'});
+            
+            const arrowhead1Lon = arrowhead1.geometry.coordinates[0];
+            const arrowhead1Lat = arrowhead1.geometry.coordinates[1];
+            const arrowhead2Lon = arrowhead2.geometry.coordinates[0];
+            const arrowhead2Lat = arrowhead2.geometry.coordinates[1];
+            
+            const endLon = destination.geometry.coordinates[0];
+            const endLat = destination.geometry.coordinates[1];
+            
+            L.polyline([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]], {
+                color: color,
+                weight: 4,
+                opacity: 0.8
+            }).addTo(map);
+            
+            L.polyline([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]], {
+                color: color,
+                weight: 4,
+                opacity: 0.8
+            }).addTo(map);
+        }
+        
+        function addSunCircle(destination, color) {
+            const endLon = destination.geometry.coordinates[0];
+            const endLat = destination.geometry.coordinates[1];
+            
+            // Draw the sun circle directly at the end of the line
+            L.circle([endLat, endLon], {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.8,
+                radius: 8 // meters
+            }).addTo(map);
+        }
+        
 
 
         // Add event listeners for bearing adjustment buttons
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('calculateHengeBtn').addEventListener('click', async function() {
-                if (Math.abs(currentBearing - originalBearing) < 0.1) {
-                    alert('No adjustment made. Please drag the arrow to change the bearing first, or click "Calculate Henge" to use the original bearing.');
-                }
-                
                 await calculateHenge();
             });
             
@@ -761,55 +867,7 @@
             });
         });
         
-        async function recalculateWithAdjustedBearing() {
-            const submitBtn = document.getElementById('submitBtn');
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            const useAdjustedBtn = document.getElementById('useAdjustedBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            
-            // Show loading state
-            submitBtn.disabled = true;
-            useAdjustedBtn.disabled = true;
-            resetBtn.disabled = true;
-            loading.style.display = 'block';
-            result.style.display = 'none';
-            
-            try {
-                const response = await fetch('/check_henge', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        address: currentAddress,
-                        road_bearing: currentBearing
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    displayResult(data);
-                    // Update the original bearing to the adjusted one
-                    originalBearing = currentBearing;
-                } else {
-                    try {
-                        displayError(data.error);
-                    } catch (error) {
-                        console.error('Error in displayError:', error);
-                    }
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                displayError('Network error. Please try again.');
-            } finally {
-                submitBtn.disabled = false;
-                useAdjustedBtn.disabled = false;
-                resetBtn.disabled = false;
-                loading.style.display = 'none';
-            }
-        }
+
 
         document.getElementById('hengeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -818,6 +876,9 @@
             const submitBtn = document.getElementById('submitBtn');
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
+            
+            // Reset state for new address
+            resetToInitialState();
             
             // Show loading state
             submitBtn.disabled = true;
@@ -863,13 +924,9 @@
             if (result.henge_found) {
                 html = `
                     <h3>🎉 Henge Found!</h3>
-                    <p><span class="highlight">Address:</span> ${data.address}</p>
                     <p><span class="highlight">Next Henge Date:</span> ${result.henge_time_local_str ? result.henge_time_local_str : formatDate(result.henge_date)}</p>
                     <p><span class="highlight">Street Bearing:</span> ${data.road_bearing}° from North</p>
                     <p><span class="highlight">Sun Azimuth:</span> ${result.sun_angle}° from North</p>
-                    <div class="coordinates">
-                        <strong>Coordinates:</strong> ${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lon.toFixed(6)}
-                    </div>
                     <p><em>Perfect alignment! The sun will set directly down your street on this date.</em></p>
                     <div class="disclaimer">
                         <p><span class="topic">Note: These predictions are rough estimates calculations.</span> For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
@@ -880,11 +937,7 @@
             } else {
                 html = `
                     <h3>🔍 No Henge Found</h3>
-                    <p><span class="highlight">Address:</span> ${data.address}</p>
                     <p><span class="highlight">Street Bearing:</span> ${data.road_bearing}° from North</p>
-                    <div class="coordinates">
-                        <strong>Coordinates:</strong> ${data.coordinates.lat.toFixed(6)}, ${data.coordinates.lon.toFixed(6)}
-                    </div>
                     <p><em>No henge alignment found in the next ${result.days_searched} days. The sun's path doesn't align with your street's orientation at this location.</em></p>
                     <div class="disclaimer">
                         <p><span class="topic">Note: These predictions are rough calculations based on various assumptions.</span> For official city-wide henge events (like Manhattanhenge), check official announcements as they use specific reference points and may differ from street-to-street calculations here.</p>
@@ -897,9 +950,6 @@
             // Set the content
             resultDiv.innerHTML = html;
             resultDiv.style.display = 'block';
-            
-            // Display the map with bearing arrow
-            displayMap(data.coordinates.lat, data.coordinates.lon, data.road_bearing);
         }
 
         function displayError(message) {
@@ -932,6 +982,59 @@
             document.getElementById('mapContainer').style.display = 'none';
         }
 
+        function resetToInitialState() {
+            // Clear any existing map layers
+            if (map) {
+                map.eachLayer((layer) => {
+                    if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.Circle) {
+                        map.removeLayer(layer);
+                    }
+                });
+            }
+            
+            // Reset variables
+            bearingArrow = null;
+            originalBearing = 0;
+            currentBearing = 0;
+            currentAddress = null;
+            currentCoordinates = null;
+            isDragging = false;
+            
+            // Show all interactive elements again
+            const spinnerHint = document.querySelector('.spinner-hint');
+            if (spinnerHint) spinnerHint.style.display = 'block';
+            
+            const bearingControls = document.querySelector('.bearing-controls');
+            if (bearingControls) bearingControls.style.display = 'flex';
+            
+            const bearingValue = document.getElementById('bearingValue');
+            if (bearingValue) {
+                bearingValue.style.display = 'inline';
+                bearingValue.textContent = '0°';
+                bearingValue.classList.remove('adjusted');
+            }
+            
+            const resetBtn = document.getElementById('resetBtn');
+            if (resetBtn) resetBtn.style.display = 'inline-block';
+            
+            const calculateBtn = document.getElementById('calculateHengeBtn');
+            if (calculateBtn) calculateBtn.style.display = 'block';
+            
+            // Reset map legend
+            const mapInfo = document.querySelector('.map-info');
+            if (mapInfo) {
+                mapInfo.innerHTML = '<strong>Map Legend:</strong> Red marker shows your address. Blue arrow shows the road bearing direction (drag to adjust).';
+            }
+            
+            // Re-enable map dragging and add event listeners back
+            if (map) {
+                map.dragging.enable();
+                map.on('mousedown', onMapMouseDown);
+                map.on('mousemove', onMapMouseMove);
+                map.on('mouseup', onMapMouseUp);
+            }
+        }
+        
         function formatDate(dateString) {
             const date = new Date(dateString);
             return date.toLocaleDateString('en-US', {

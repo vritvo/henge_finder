@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from hengefinder import search_for_henge
-from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date
+from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
 import traceback
 import time
 
@@ -113,6 +113,10 @@ def check_henge():
             if user_road_bearing is not None:
                 road_bearing = float(user_road_bearing)
                 print(f"Using user-provided road bearing: {road_bearing}")
+                
+                # Normalize to 180-360 range
+                road_bearing = normalize_bearing_to_180_360(road_bearing)
+                print(f"Normalized user road bearing to 180-360 range: {road_bearing}")
             else:
                 bearing_start_time = time.time()
                 road_bearing = get_road_bearing(lat, lon)
