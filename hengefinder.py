@@ -2,7 +2,6 @@
 from datetime import datetime, timedelta
 from utils import *
 from config import MATCH_THRESHOLD_DEG, MAX_DAYS_TO_SEARCH, COARSE_SEARCH_STEP_DAYS, TARGET_ALTITUDE_DEG, FINE_SEARCH_WINDOW_DAYS
-import time
 from typing import Optional
 
 
@@ -34,22 +33,14 @@ def search_for_henge(
             road_bearing (float): Road's bearing angle in degrees
             days_searched (int): Number of days searched in the coarse search
     """
-    start_time = time.time()
-
     if road_bearing is None:
-        bearing_start = time.time()
         road_bearing = get_road_bearing(lat, lon)
-        bearing_end = time.time()
-        print(f"    🧭 get_road_bearing in search_for_henge: {bearing_end - bearing_start:.3f}s")
 
     tz = get_timezone_from_coordinates(lat, lon)
     obs = Observer(lat, lon)
 
-    horizon_start = time.time()
     az_today, exact_time_today    = get_horizon_azimuth(tz, obs, date, target_altitude_deg=TARGET_ALTITUDE_DEG)
     az_tomorrow, exact_time_tomorrow = get_horizon_azimuth(tz, obs, date + timedelta(days=1), target_altitude_deg=TARGET_ALTITUDE_DEG)
-    horizon_end = time.time()
-    print(f"    ☀️ Initial horizon_azimuth calls: {horizon_end - horizon_start:.3f}s")
 
     # If we couldn't get the azimuth for today or tomorrow, return an error
     if az_today == None or az_tomorrow == None: 
@@ -194,13 +185,7 @@ def search_for_henge(
             'days_searched': MAX_DAYS_TO_SEARCH
         }
 
-    search_start = time.time()
     result = _search_over_days(step=step_size)
-    search_end = time.time()
-    print(f"    🔍 _search_over_days took: {search_end - search_start:.3f}s")
-
-    end_time = time.time()
-    print(f"    ⏱️  search_for_henge total: {end_time - start_time:.3f}s")
 
     return result
 
@@ -215,7 +200,6 @@ def search_daily_for_henge(
     """
     Iterate every day within a specified period and check if any day is one where a henge occurs. 
     """
-    start_time = time.time()
     curr_date = start_date
 
     while curr_date <= end_date:
@@ -232,15 +216,11 @@ def search_daily_for_henge(
         henge_found = check_match(az_curr_date, road_bearing)
 
         if henge_found:
-            end_time = time.time()
-            print(f"    📅 search_daily_for_henge took: {end_time - start_time:.3f}s")
             return henge_found, exact_time, az_curr_date
 
         curr_date = curr_date + timedelta(days=1)
 
     # If we got here, no henge was found.
-    end_time = time.time()
-    print(f"    📅 search_daily_for_henge took: {end_time - start_time:.3f}s")
     return False, None, None
 
 if __name__ == "__main__":

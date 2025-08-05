@@ -9,7 +9,6 @@ from datetime import timedelta
 import numpy as np
 from config import MATCH_THRESHOLD_DEG, ROAD_SEARCH_RADIUS_M, TARGET_ALTITUDE_DEG, SEARCH_WINDOW_MINUTES
 from datetime import datetime, date
-import time
 
 class GeocodingError(Exception):
     """Raised when geocoding fails to find coordinates for an address."""
@@ -17,12 +16,9 @@ class GeocodingError(Exception):
 
 def get_location(address):
     geolocator = Nominatim(user_agent="HengeFinder", timeout=10) #longer timeout is needed for some addresses
-    geocode_start = time.time()
     location = geolocator.geocode(address)
-    geocode_end = time.time()
     if location is None:
         raise GeocodingError(f"Could not find coordinates for address: {address}")
-    print(f"    📍 Nominatim geocoding took: {geocode_end - geocode_start:.3f}s")
     return location
 
 def get_coordinates(location):
@@ -81,20 +77,13 @@ def get_road_bearing(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="all"):
     Return the street‐bearing (degrees clockwise from North) at the given address
     by finding the nearest OSMnx edge and calculating bearing.
     """
-    start_time = time.time()
     #TODO: This works for many streets, but is not always reliable (curb, intersection, etc)
 
     # get a network around the point
-    graph_start = time.time()
     G = ox.graph_from_point((lat, lon), dist=dist, network_type=network_type)
-    graph_end = time.time()
-    print(f"    🗺️  OSMnx graph_from_point took: {graph_end - graph_start:.3f}s")
 
     # find the single closest edge to our point
-    edge_start = time.time()
     u, v, key = ox.distance.nearest_edges(G, X=lon, Y=lat)
-    edge_end = time.time()
-    print(f"    🗺️  OSMnx nearest_edges took: {edge_end - edge_start:.3f}s")
 
     # get the coordinates of both endpoints
     lat_1 = G.nodes[u]['y']
@@ -120,9 +109,6 @@ def get_road_bearing(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="all"):
 
     #put in 180-360 range, since the sun sets in the west (and if a road bearing is, for e.g, 90, it's fine to say 270)
     bearing = normalize_bearing_to_180_360(bearing)
-
-    end_time = time.time()
-    print(f"    🗺️  get_road_bearing total: {end_time - start_time:.3f}s")
 
     return bearing
 

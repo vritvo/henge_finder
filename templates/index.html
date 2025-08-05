@@ -357,10 +357,6 @@
             cursor: grab;
         }
 
-        .arrow-handle:hover {
-            fill-opacity: 1 !important;
-        }
-
         body.grabbing {
             cursor: grabbing !important;
         }
@@ -448,14 +444,169 @@
     <script>
         let map = null;
         let marker = null;
-        let bearingArrow = null;
-        let originalBearing = 0;
-        let currentBearing = 0;
         let currentAddress = null;
         let currentCoordinates = null;
+        let originalBearing = 0;
+        let currentBearing = 0;
+        let isInteractiveMode = false;
         let isDragging = false;
 
-        // Function to display address lookup results (without henge calculation)
+        // Unified arrow management
+        class ArrowManager {
+            constructor(map) {
+                this.map = map;
+                this.arrowGroup = null;
+                this.isInteractive = false;
+            }
+
+            createArrow(lat, lon, bearing, options = {}) {
+                const {
+                    color = '#2A2B2A',
+                    weight = 4,
+                    opacity = 0.8,
+                    length = 100,
+                    interactive = false
+                } = options;
+
+                // Clear existing arrow
+                this.clear();
+
+                // Calculate arrow endpoint
+                const start = [lon, lat];
+                const destination = turf.destination(start, length, bearing, {units: 'meters'});
+                const endLon = destination.geometry.coordinates[0];
+                const endLat = destination.geometry.coordinates[1];
+
+                // Create arrow line
+                const arrowLine = L.polyline([[lat, lon], [endLat, endLon]], {
+                    color: color,
+                    weight: weight,
+                    opacity: opacity,
+                    className: interactive ? 'interactive-arrow' : ''
+                });
+
+                // Create arrowhead
+                const arrowheadLines = this.createArrowhead(destination, bearing, color, weight, opacity);
+
+                // Create handle if interactive
+                let handle = null;
+                if (interactive) {
+                    handle = L.marker([endLat, endLon], {
+                        icon: L.divIcon({
+                            className: 'arrow-handle',
+                            html: '<div style="background-color: #2A2B2A; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; cursor: grab;"></div>',
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
+                        })
+                    });
+                }
+
+                // Group all elements
+                this.arrowGroup = {
+                    line: arrowLine,
+                    arrowheads: arrowheadLines,
+                    handle: handle,
+                    center: [lat, lon],
+                    bearing: bearing,
+                    length: length
+                };
+
+                // Add to map
+                arrowLine.addTo(this.map);
+                arrowheadLines.forEach(line => line.addTo(this.map));
+                if (handle) handle.addTo(this.map);
+
+                this.isInteractive = interactive;
+                return this.arrowGroup;
+            }
+
+            createArrowhead(destination, bearing, color, weight, opacity) {
+                const arrowheadLength = 30;
+                const arrowheadAngle = 30;
+                
+                const arrowhead1 = turf.destination(destination, arrowheadLength, bearing + 180 - arrowheadAngle, {units: 'meters'});
+                const arrowhead2 = turf.destination(destination, arrowheadLength, bearing + 180 + arrowheadAngle, {units: 'meters'});
+                
+                const endLon = destination.geometry.coordinates[0];
+                const endLat = destination.geometry.coordinates[1];
+                
+                const line1 = L.polyline([[endLat, endLon], [arrowhead1.geometry.coordinates[1], arrowhead1.geometry.coordinates[0]]], {
+                    color: color,
+                    weight: weight,
+                    opacity: opacity
+                });
+                
+                const line2 = L.polyline([[endLat, endLon], [arrowhead2.geometry.coordinates[1], arrowhead2.geometry.coordinates[0]]], {
+                    color: color,
+                    weight: weight,
+                    opacity: opacity
+                });
+
+                return [line1, line2];
+            }
+
+            updateArrow(bearing, updateHandle = true) {
+                if (!this.arrowGroup) return;
+
+                const [lat, lon] = this.arrowGroup.center;
+                const start = [lon, lat];
+                const destination = turf.destination(start, this.arrowGroup.length, bearing, {units: 'meters'});
+                const endLon = destination.geometry.coordinates[0];
+                const endLat = destination.geometry.coordinates[1];
+
+                // Update arrow line
+                this.arrowGroup.line.setLatLngs([[lat, lon], [endLat, endLon]]);
+
+                // Update arrowhead
+                const newArrowheads = this.createArrowhead(destination, bearing, 
+                    this.arrowGroup.line.options.color, 
+                    this.arrowGroup.line.options.weight, 
+                    this.arrowGroup.line.options.opacity);
+
+                // Remove old arrowheads
+                this.arrowGroup.arrowheads.forEach(line => this.map.removeLayer(line));
+
+                // Add new arrowheads
+                newArrowheads.forEach(line => line.addTo(this.map));
+                this.arrowGroup.arrowheads = newArrowheads;
+
+                // Update handle if not dragging
+                if (updateHandle && this.arrowGroup.handle) {
+                    this.arrowGroup.handle.setLatLng([endLat, endLon]);
+                }
+
+                this.arrowGroup.bearing = bearing;
+            }
+
+            clear() {
+                if (this.arrowGroup) {
+                    this.map.removeLayer(this.arrowGroup.line);
+                    this.arrowGroup.arrowheads.forEach(line => this.map.removeLayer(line));
+                    if (this.arrowGroup.handle) {
+                        this.map.removeLayer(this.arrowGroup.handle);
+                    }
+                    this.arrowGroup = null;
+                }
+            }
+
+            addSunCircle(lat, lon, bearing, color = '#DC816E', length = 70) {
+                const start = [lon, lat];
+                const destination = turf.destination(start, length, bearing, {units: 'meters'});
+                const endLon = destination.geometry.coordinates[0];
+                const endLat = destination.geometry.coordinates[1];
+
+                return L.circle([endLat, endLon], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.8,
+                    radius: 8
+                }).addTo(this.map);
+            }
+        }
+
+        let arrowManager = null;
+
+        // Function to display address lookup results
         function displayAddressLookup(data) {
             const resultDiv = document.getElementById('result');
             
@@ -470,7 +621,7 @@
             resultDiv.className = 'result address';
             resultDiv.style.display = 'block';
             
-            // Display the map with bearing arrow
+            // Display the map with interactive arrow
             displayMap(data.coordinates.lat, data.coordinates.lon, data.road_bearing);
         }
         
@@ -495,6 +646,8 @@
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
                 
+                arrowManager = new ArrowManager(map);
+                
                 // Add event listeners for map interaction
                 map.on('mousedown', onMapMouseDown);
                 map.on('mousemove', onMapMouseMove);
@@ -502,7 +655,7 @@
             } else {
                 map.setView([lat, lon], 18);
                 map.eachLayer((layer) => {
-                    if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+                    if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.Circle) {
                         map.removeLayer(layer);
                     }
                 });
@@ -519,128 +672,26 @@
             }).addTo(map);
             
             // Create interactive arrow
-            createInteractiveArrow(lat, lon, roadBearing);
+            arrowManager.createArrow(lat, lon, roadBearing, { interactive: true });
+            isInteractiveMode = true;
+            isDragging = false;
         }
-        
-        function createInteractiveArrow(lat, lon, bearing) {
-            // Use Turf.js to calculate the arrow endpoint with proper geodesic math
-            const arrowLength = 100; // Length in meters
-            const start = [lon, lat]; // Turf expects [lon, lat]
-            
-            // Calculate the destination point using proper geodesic math
-            const destination = turf.destination(start, arrowLength, bearing, {units: 'meters'});
-            const endLon = destination.geometry.coordinates[0];
-            const endLat = destination.geometry.coordinates[1];
-            
-            // Create arrow line with interactive styling
-            bearingArrow = L.polyline([[lat, lon], [endLat, endLon]], {
-                color: '#2A2B2A',
-                weight: 6,
-                opacity: 0.9,
-                className: 'interactive-arrow'
-            }).addTo(map);
-            
-            // Calculate arrowhead using Turf.js
-            const arrowheadLength = 30; // meters
-            const arrowheadAngle = 30; // degrees
-            
-            // Calculate arrowhead points by going backwards from the destination
-            const arrowhead1 = turf.destination(destination, arrowheadLength, bearing + 180 - arrowheadAngle, {units: 'meters'});
-            const arrowhead2 = turf.destination(destination, arrowheadLength, bearing + 180 + arrowheadAngle, {units: 'meters'});
-            
-            const arrowhead1Lon = arrowhead1.geometry.coordinates[0];
-            const arrowhead1Lat = arrowhead1.geometry.coordinates[1];
-            const arrowhead2Lon = arrowhead2.geometry.coordinates[0];
-            const arrowhead2Lat = arrowhead2.geometry.coordinates[1];
-            
-            const arrowhead1Line = L.polyline([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]], {
-                color: '#2A2B2A',
-                weight: 6,
-                opacity: 0.9
-            }).addTo(map);
-            
-            const arrowhead2Line = L.polyline([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]], {
-                color: '#2A2B2A',
-                weight: 6,
-                opacity: 0.9
-            }).addTo(map);
-            
-            // Add a draggable handle at the arrow tip
-            const handle = L.marker([endLat, endLon], {
-                icon: L.divIcon({
-                    className: 'arrow-handle',
-                    html: '<div style="background-color: #2A2B2A; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; cursor: grab;"></div>',
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                })
-            }).addTo(map);
-            
-            // Store references
-            bearingArrow.handle = handle;
-            bearingArrow.arrowhead1 = arrowhead1Line;
-            bearingArrow.arrowhead2 = arrowhead2Line;
-            bearingArrow.center = [lat, lon];
-        }
-        
 
-        
-        function updateArrow(bearing, updateHandle = true) {
-            if (!bearingArrow) return;
-            
-            const [lat, lon] = bearingArrow.center;
-            const arrowLength = 100; // meters
-            
-            // Use Turf.js to calculate the new arrow endpoint
-            const start = [lon, lat]; // Turf expects [lon, lat]
-            const destination = turf.destination(start, arrowLength, bearing, {units: 'meters'});
-            const endLon = destination.geometry.coordinates[0];
-            const endLat = destination.geometry.coordinates[1];
-            
-            // Update arrow line
-            bearingArrow.setLatLngs([[lat, lon], [endLat, endLon]]);
-            
-            // Calculate new arrowhead positions using Turf.js
-            const arrowheadLength = 30; // meters
-            const arrowheadAngle = 30; // degrees
-            
-            // Calculate arrowhead points by going backwards from the destination
-            const arrowhead1 = turf.destination(destination, arrowheadLength, bearing + 180 - arrowheadAngle, {units: 'meters'});
-            const arrowhead2 = turf.destination(destination, arrowheadLength, bearing + 180 + arrowheadAngle, {units: 'meters'});
-            
-            const arrowhead1Lon = arrowhead1.geometry.coordinates[0];
-            const arrowhead1Lat = arrowhead1.geometry.coordinates[1];
-            const arrowhead2Lon = arrowhead2.geometry.coordinates[0];
-            const arrowhead2Lat = arrowhead2.geometry.coordinates[1];
-            
-            // Update existing arrowhead lines
-            bearingArrow.arrowhead1.setLatLngs([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]]);
-            bearingArrow.arrowhead2.setLatLngs([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]]);
-            
-            // Only update handle position if not dragging
-            if (updateHandle) {
-                bearingArrow.handle.setLatLng([endLat, endLon]);
-            }
-            
-            // Update bearing display
-            const bearingElement = document.getElementById('bearingValue');
-            bearingElement.textContent = `${bearing.toFixed(1)}°`;
-        }
-        
+        // Mouse event handlers for arrow interaction
         function onMapMouseDown(e) {
-            if (!bearingArrow) return;
+            if (!arrowManager || !arrowManager.arrowGroup || !arrowManager.isInteractive) return;
             
-            const handleLatLng = bearingArrow.handle.getLatLng();
+            const handleLatLng = arrowManager.arrowGroup.handle.getLatLng();
             const distance = map.distance(e.latlng, handleLatLng);
             
-            if (distance < 80) { // 80 pixels tolerance for easier interaction
+            if (distance < 80) {
                 isDragging = true;
                 document.body.classList.add('grabbing');
                 
-                // Remove the handle completely during dragging
-                map.removeLayer(bearingArrow.handle);
-                bearingArrow.handle = null;
+                // Remove handle during dragging
+                map.removeLayer(arrowManager.arrowGroup.handle);
+                arrowManager.arrowGroup.handle = null;
                 
-                // Prevent map dragging when interacting with arrow
                 e.originalEvent.stopPropagation();
                 e.originalEvent.preventDefault();
                 map.dragging.disable();
@@ -648,41 +699,38 @@
         }
         
         function onMapMouseMove(e) {
-            if (!isDragging || !bearingArrow) return;
+            if (!isDragging || !arrowManager || !arrowManager.arrowGroup) return;
             
-            // Prevent map dragging during arrow interaction
             e.originalEvent.stopPropagation();
             e.originalEvent.preventDefault();
             
-            // Calculate bearing using Turf.js from center to mouse position
-            const [centerLat, centerLon] = bearingArrow.center;
+            const [centerLat, centerLon] = arrowManager.arrowGroup.center;
             const mouseLat = e.latlng.lat;
             const mouseLon = e.latlng.lng;
             
-            // Use Turf.js to calculate the true bearing
-            const start = [centerLon, centerLat]; // Turf expects [lon, lat]
+            const start = [centerLon, centerLat];
             const end = [mouseLon, mouseLat];
             
-            const bearing = (turf.bearing(start, end) + 360) % 360; // 0° = North
+            const bearing = (turf.bearing(start, end) + 360) % 360;
             
             currentBearing = bearing;
-            updateArrow(currentBearing, false); // Don't update handle during drag
+            arrowManager.updateArrow(currentBearing, false);
+            document.getElementById('bearingValue').textContent = `${bearing.toFixed(1)}°`;
         }
         
         function onMapMouseUp() {
-            if (isDragging) {
+            if (isDragging && arrowManager && arrowManager.arrowGroup) {
                 isDragging = false;
                 document.body.classList.remove('grabbing');
                 
-                // Recreate the handle at the arrow tip
-                const [lat, lon] = bearingArrow.center;
-                const arrowLength = 100; // meters
+                // Recreate handle
+                const [lat, lon] = arrowManager.arrowGroup.center;
                 const start = [lon, lat];
-                const destination = turf.destination(start, arrowLength, currentBearing, {units: 'meters'});
+                const destination = turf.destination(start, arrowManager.arrowGroup.length, currentBearing, {units: 'meters'});
                 const endLon = destination.geometry.coordinates[0];
                 const endLat = destination.geometry.coordinates[1];
                 
-                bearingArrow.handle = L.marker([endLat, endLon], {
+                arrowManager.arrowGroup.handle = L.marker([endLat, endLon], {
                     icon: L.divIcon({
                         className: 'arrow-handle',
                         html: '<div style="background-color: #2A2B2A; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #fff; cursor: grab;"></div>',
@@ -691,27 +739,22 @@
                     })
                 }).addTo(map);
                 
-                // Re-enable map dragging
                 map.dragging.enable();
             }
         }
-        
 
-        
-
-        
+        // Calculate henge function
         async function calculateHenge() {
             const calculateBtn = document.getElementById('calculateHengeBtn');
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             
-            // Show loading state
             calculateBtn.disabled = true;
             loading.style.display = 'block';
             result.style.display = 'none';
             
             try {
-                const response = await fetch('/check_henge', {
+                const response = await fetch('/lookup_address', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -726,42 +769,28 @@
                 
                 if (response.ok) {
                     displayResult(data);
+                    
                     // Replace interactive arrow with static arrows
-                    // Only show sun azimuth if henge was found
                     if (data.result.henge_found) {
-                        replaceWithStaticArrows(data.road_bearing, data.result.sun_angle);
+                        arrowManager.clear();
+                        arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
+                        arrowManager.addSunCircle(currentCoordinates.lat, currentCoordinates.lon, data.result.sun_angle);
+                        
+                        // Update map legend
+                        document.querySelector('.map-info').innerHTML = 
+                            '<strong>Map Legend:</strong> Dark arrow shows road bearing. Orange circle shows sun azimuth.';
                     } else {
-                        replaceWithStaticArrows(data.road_bearing, null);
+                        arrowManager.clear();
+                        arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
+                        
+                        document.querySelector('.map-info').innerHTML = 
+                            '<strong>Map Legend:</strong> Dark arrow shows road bearing.';
                     }
-                    // Hide the calculate button
-                    calculateBtn.style.display = 'none';
                     
-                    // Hide interactive elements that are no longer needed
-                    const spinnerHint = document.querySelector('.spinner-hint');
-                    if (spinnerHint) spinnerHint.style.display = 'none';
-                    
-                    const bearingValue = document.getElementById('bearingValue');
-                    if (bearingValue) bearingValue.style.display = 'none';
-                    
-                    // Hide the entire bearing controls section
-                    const bearingControls = document.querySelector('.bearing-controls');
-                    if (bearingControls) bearingControls.style.display = 'none';
-                    
-                    const resetBtn = document.getElementById('resetBtn');
-                    if (resetBtn) resetBtn.style.display = 'none';
-                    
-                    // Hide Step 2 and Step 3 headers since they're no longer relevant
-                    const step2Header = document.querySelector('.map-container h3');
-                    if (step2Header) step2Header.style.display = 'none';
-                    
-                    const step3Header = document.querySelector('.main-action h3');
-                    if (step3Header) step3Header.style.display = 'none';
+                    // Hide interactive elements
+                    hideInteractiveElements();
                 } else {
-                    try {
-                        displayError(data.error);
-                    } catch (error) {
-                        console.error('Error in displayError:', error);
-                    }
+                    displayError(data.error);
                 }
             } catch (error) {
                 displayError('Network error. Please try again.');
@@ -770,128 +799,31 @@
                 loading.style.display = 'none';
             }
         }
-        
-        function replaceWithStaticArrows(roadBearing, sunAzimuth) {
-            // Remove the interactive arrow
-            if (bearingArrow) {
-                map.removeLayer(bearingArrow);
-                if (bearingArrow.arrowhead1) map.removeLayer(bearingArrow.arrowhead1);
-                if (bearingArrow.arrowhead2) map.removeLayer(bearingArrow.arrowhead2);
-                if (bearingArrow.handle) map.removeLayer(bearingArrow.handle);
-            }
-            
-            // Remove mouse event listeners to prevent further interaction
-            map.off('mousedown', onMapMouseDown);
-            map.off('mousemove', onMapMouseMove);
-            map.off('mouseup', onMapMouseUp);
-            
-            // Clear the bearingArrow variable
-            bearingArrow = null;
-            
-            const lat = currentCoordinates.lat;
-            const lon = currentCoordinates.lon;
-            const arrowLength = 100; // meters
-            
-            // Create road bearing arrow (dark)
-            const roadStart = [lon, lat];
-            const roadDestination = turf.destination(roadStart, arrowLength, roadBearing, {units: 'meters'});
-            const roadEndLon = roadDestination.geometry.coordinates[0];
-            const roadEndLat = roadDestination.geometry.coordinates[1];
-            
-            const roadArrow = L.polyline([[lat, lon], [roadEndLat, roadEndLon]], {
-                color: '#2A2B2A',
-                weight: 4,
-                opacity: 0.8
-            }).addTo(map);
-            
-            // Add road arrowhead
-            addStaticArrowhead(roadDestination, roadBearing);
-            
-            // Create sun azimuth line with circle (orange/red) - shorter than road bearing
-            // Only if sunAzimuth is provided (henge was found)
-            if (sunAzimuth !== null) {
-                const sunLineLength = 70; // meters (shorter than road bearing)
-                const sunStart = [lon, lat];
-                const sunDestination = turf.destination(sunStart, sunLineLength, sunAzimuth, {units: 'meters'});
-                const sunEndLon = sunDestination.geometry.coordinates[0];
-                const sunEndLat = sunDestination.geometry.coordinates[1];
-                
-                const sunLine = L.polyline([[lat, lon], [sunEndLat, sunEndLon]], {
-                    color: '#DC816E',
-                    weight: 4,
-                    opacity: 0.8
-                }).addTo(map);
-                
-                // Add sun circle at the end
-                addSunCircle(sunDestination, '#DC816E');
-            }
-            
-            // Update map legend
-            const mapInfo = document.querySelector('.map-info');
-            if (sunAzimuth !== null) {
-                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark arrow shows road bearing. Orange line shows sun azimuth.';
-            } else {
-                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark arrow shows road bearing.';
-            }
-        }
-        
-        function addStaticArrowhead(destination, bearing) {
-            const arrowheadLength = 30; // meters
-            const arrowheadAngle = 30; // degrees
-            
-            const arrowhead1 = turf.destination(destination, arrowheadLength, bearing + 180 - arrowheadAngle, {units: 'meters'});
-            const arrowhead2 = turf.destination(destination, arrowheadLength, bearing + 180 + arrowheadAngle, {units: 'meters'});
-            
-            const arrowhead1Lon = arrowhead1.geometry.coordinates[0];
-            const arrowhead1Lat = arrowhead1.geometry.coordinates[1];
-            const arrowhead2Lon = arrowhead2.geometry.coordinates[0];
-            const arrowhead2Lat = arrowhead2.geometry.coordinates[1];
-            
-            const endLon = destination.geometry.coordinates[0];
-            const endLat = destination.geometry.coordinates[1];
-            
-            L.polyline([[endLat, endLon], [arrowhead1Lat, arrowhead1Lon]], {
-                color: '#2A2B2A',
-                weight: 4,
-                opacity: 0.8
-            }).addTo(map);
-            
-            L.polyline([[endLat, endLon], [arrowhead2Lat, arrowhead2Lon]], {
-                color: '#2A2B2A',
-                weight: 4,
-                opacity: 0.8
-            }).addTo(map);
-        }
-        
-        function addSunCircle(destination, color) {
-            const endLon = destination.geometry.coordinates[0];
-            const endLat = destination.geometry.coordinates[1];
-            
-            // Draw the sun circle directly at the end of the line
-            L.circle([endLat, endLon], {
-                color: color,
-                fillColor: color,
-                fillOpacity: 0.8,
-                radius: 8 // meters
-            }).addTo(map);
-        }
-        
 
+        function hideInteractiveElements() {
+            const calculateBtn = document.getElementById('calculateHengeBtn');
+            const bearingControls = document.querySelector('.bearing-controls');
+            const step2Header = document.querySelector('.map-container h3');
+            const step3Header = document.querySelector('.main-action h3');
+            
+            calculateBtn.style.display = 'none';
+            if (bearingControls) bearingControls.style.display = 'none';
+            if (step2Header) step2Header.style.display = 'none';
+            if (step3Header) step3Header.style.display = 'none';
+        }
 
-        // Add event listeners for bearing adjustment buttons
+        // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('calculateHengeBtn').addEventListener('click', async function() {
-                await calculateHenge();
-            });
+            document.getElementById('calculateHengeBtn').addEventListener('click', calculateHenge);
             
             document.getElementById('resetBtn').addEventListener('click', function() {
                 currentBearing = originalBearing;
-                updateArrow(originalBearing);
+                arrowManager.updateArrow(originalBearing);
+                document.getElementById('bearingValue').textContent = `${originalBearing.toFixed(1)}°`;
             });
         });
-        
 
-
+        // Form submission
         document.getElementById('hengeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -900,10 +832,8 @@
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             
-            // Reset state for new address
             resetToInitialState();
             
-            // Show loading state
             submitBtn.disabled = true;
             loading.style.display = 'block';
             result.style.display = 'none';
@@ -923,11 +853,7 @@
                 if (response.ok) {
                     displayAddressLookup(data);
                 } else {
-                    try {
-                        displayError(data.error);
-                    } catch (error) {
-                        console.error('Error in displayError:', error);
-                    }
+                    displayError(data.error);
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -968,14 +894,11 @@
                 resultDiv.className = 'result no-henge';
             }
             
-            // Set the content
             resultDiv.innerHTML = html;
             resultDiv.style.display = 'block';
         }
 
         function displayError(message) {
-            
-            // Create a completely new div element
             const errorDiv = document.createElement('div');
             errorDiv.innerHTML = `
                 <h3>❌ Error</h3>
@@ -993,38 +916,27 @@
                 opacity: 1 !important;
             `;
             
-            // Clear the result div and append the new error div
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = '';
             resultDiv.appendChild(errorDiv);
             resultDiv.style.display = 'block';
             
-            // Hide the map when there's an error
             document.getElementById('mapContainer').style.display = 'none';
         }
 
         function resetToInitialState() {
-            // Clear any existing map layers
-            if (map) {
-                map.eachLayer((layer) => {
-                    if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.Circle) {
-                        map.removeLayer(layer);
-                    }
-                });
+            if (arrowManager) {
+                arrowManager.clear();
             }
             
-            // Reset variables
-            bearingArrow = null;
-            originalBearing = 0;
-            currentBearing = 0;
             currentAddress = null;
             currentCoordinates = null;
+            originalBearing = 0;
+            currentBearing = 0;
+            isInteractiveMode = false;
             isDragging = false;
             
             // Show all interactive elements again
-            const spinnerHint = document.querySelector('.spinner-hint');
-            if (spinnerHint) spinnerHint.style.display = 'block';
-            
             const bearingControls = document.querySelector('.bearing-controls');
             if (bearingControls) bearingControls.style.display = 'flex';
             
@@ -1032,7 +944,6 @@
             if (bearingValue) {
                 bearingValue.style.display = 'inline';
                 bearingValue.textContent = '0°';
-                bearingValue.classList.remove('adjusted');
             }
             
             const resetBtn = document.getElementById('resetBtn');
@@ -1041,18 +952,17 @@
             const calculateBtn = document.getElementById('calculateHengeBtn');
             if (calculateBtn) calculateBtn.style.display = 'block';
             
-            // Reset map legend
-            const mapInfo = document.querySelector('.map-info');
-            if (mapInfo) {
-                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark arrow shows the road bearing direction (drag to adjust).';
-            }
+            const step2Header = document.querySelector('.map-container h3');
+            if (step2Header) step2Header.style.display = 'block';
             
-            // Re-enable map dragging and add event listeners back
+            const step3Header = document.querySelector('.main-action h3');
+            if (step3Header) step3Header.style.display = 'block';
+            
+            document.querySelector('.map-info').innerHTML = 
+                '<strong>Map Legend:</strong> Dark arrow shows the road bearing direction (drag to adjust).';
+            
             if (map) {
                 map.dragging.enable();
-                map.on('mousedown', onMapMouseDown);
-                map.on('mousemove', onMapMouseMove);
-                map.on('mouseup', onMapMouseUp);
             }
         }
         
