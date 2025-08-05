@@ -16,7 +16,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #2A2B2A;
+            background: #5E4955;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -271,10 +271,6 @@
             font-size: 1.1em;
         }
 
-        .bearing-value.adjusted {
-            color: #dc3545;
-        }
-
         .bearing-buttons {
             display: flex;
             gap: 10px;
@@ -380,21 +376,20 @@
 <body>
     <div class="container">
         <h1>🌅 Henge Finder</h1>
-        <p class="subtitle">Discover when the sun aligns with your street for a perfect sunset view</p>
         
         <div class="instructions">
-            <details>
-                <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px;">
-                    <span style="font-size: 1.2em;">What is a henge?</span>
-                </summary>
-                <p>A 'henge' is when the sun sets perfectly in line with your street, creating a dramatic view — like <a href="https://en.wikipedia.org/wiki/Manhattanhenge" target="_blank" style="color: #996888; text-decoration: none;">Manhattanhenge</a> in New York.</p>
-            </details>
+            <h3>What is a henge?</h3>
+            <ol style="color: #2A2B2A; line-height: 1.6; margin-left: 20px;">
+                <p>A 'henge' is when the sun sets perfectly in line with your street, creating a dramatic view — like <a href="https://en.wikipedia.org/wiki/Manhattanhenge" target="_blank" style="color: #996888; text-decoration: none;">Manhattanhenge</a> in New York. </p>
+                <p>Use this tool to find when the next henge will happen for your street. </p>
+
+            </ol>
         </div>
-        
+
         <div class="instructions">
             <details>
                 <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px;">
-                    <span style="font-size: 1.2em;">What makes a good street?</span>
+                    <span style="font-size: 1.2em;">What makes a good street for a henge?</span>
                 </summary>
                 <p style="color: #2A2B2A; margin-bottom: 15px;"><em>(Tips for finding the best henge view)</em></p>
                 <ul style="color: #2A2B2A; line-height: 1.6; margin-left: 20px; margin-bottom: 20px;">
@@ -413,22 +408,12 @@
                 </ul>
             </details>
         </div>
-        
-        <div class="instructions">
-            <h3>How to Use</h3>
-            <ol style="color: #2A2B2A; line-height: 1.6; margin-left: 20px;">
-                <li><strong>Enter an address</strong> on a long, straight street</li>
-                <li><strong>Adjust the arrow</strong> on the map to match your street's direction</li>
-                <li><strong>Find your henge date!</strong> See when the sunset will align</li>
-            </ol>
-        </div>
-        
         <form id="hengeForm">
+            <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 1: Enter an address</h3>
             <div class="form-group">
-                <label for="address">Enter an address:</label>
                 <input type="text" id="address" name="address" placeholder="e.g., 251 W 42nd St, New York, NY 10036" required>
             </div>
-            <button type="submit" id="submitBtn">Step 1: Find Address</button>
+            <button type="submit" id="submitBtn">Find Address</button>
         </form>
 
         <div class="loading" id="loading" style="display: none;">
@@ -439,9 +424,7 @@
         <div class="result" id="result"></div>
         
         <div class="map-container" id="mapContainer" style="display: none;">
-            <div class="spinner-hint">
-                💡 <strong>Adjust the arrow:</strong> Click and drag the blue arrow to align it with your street direction.
-            </div>
+            <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 2: Adjust the arrow to match the street's direction</h3>
             <div id="map"></div>
             <div class="bearing-controls">
                 <div class="bearing-info">
@@ -453,10 +436,11 @@
                 </div>
             </div>
             <div class="map-info">
-                <strong>Map Legend:</strong> Blue marker shows your address. Blue arrow shows the road bearing direction (drag to adjust).
+                <strong>Map Legend:</strong> Dark arrow shows the road bearing direction (drag to adjust).
             </div>
             <div class="main-action">
-                <button class="main-btn" id="calculateHengeBtn">Step 2: Find when the sun sets down this street!</button>
+                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em; text-align: left;">Step 3: Find henge</h3>
+                <button class="main-btn" id="calculateHengeBtn">Let's go!</button>
             </div>
         </div>
     </div>
@@ -640,13 +624,6 @@
             // Update bearing display
             const bearingElement = document.getElementById('bearingValue');
             bearingElement.textContent = `${bearing.toFixed(1)}°`;
-            
-            // Show if bearing has been adjusted
-            if (Math.abs(bearing - originalBearing) > 0.1) {
-                bearingElement.classList.add('adjusted');
-            } else {
-                bearingElement.classList.remove('adjusted');
-            }
         }
         
         function onMapMouseDown(e) {
@@ -772,6 +749,13 @@
                     
                     const resetBtn = document.getElementById('resetBtn');
                     if (resetBtn) resetBtn.style.display = 'none';
+                    
+                    // Hide Step 2 and Step 3 headers since they're no longer relevant
+                    const step2Header = document.querySelector('.map-container h3');
+                    if (step2Header) step2Header.style.display = 'none';
+                    
+                    const step3Header = document.querySelector('.main-action h3');
+                    if (step3Header) step3Header.style.display = 'none';
                 } else {
                     try {
                         displayError(data.error);
@@ -808,7 +792,7 @@
             const lon = currentCoordinates.lon;
             const arrowLength = 100; // meters
             
-            // Create road bearing arrow (blue)
+            // Create road bearing arrow (dark)
             const roadStart = [lon, lat];
             const roadDestination = turf.destination(roadStart, arrowLength, roadBearing, {units: 'meters'});
             const roadEndLon = roadDestination.geometry.coordinates[0];
@@ -845,9 +829,9 @@
             // Update map legend
             const mapInfo = document.querySelector('.map-info');
             if (sunAzimuth !== null) {
-                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark marker shows your address. Dark arrow shows road bearing. Salmon line shows sun azimuth.';
+                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark arrow shows road bearing. Orange line shows sun azimuth.';
             } else {
-                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark marker shows your address. Dark arrow shows road bearing.';
+                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark arrow shows road bearing.';
             }
         }
         
@@ -903,7 +887,6 @@
             document.getElementById('resetBtn').addEventListener('click', function() {
                 currentBearing = originalBearing;
                 updateArrow(originalBearing);
-                document.getElementById('bearingValue').classList.remove('adjusted');
             });
         });
         
@@ -970,7 +953,6 @@
                     <p><em>Perfect alignment! The sun will set directly down your street on this date.</em></p>
                     <div class="disclaimer">
                         <p><span class="topic">Note: These predictions are rough estimates calculations.</span> For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
-                        <p><span class="topic">Note: This app works best with long, straight streets.</span> If the calculated "Street Bearing" (i.e. road angle) seems incorrect, try using an address further down the same street. Road curves, intersections, or unusual street layouts can affect the angle calculation.</p>
                     </div>
                 `;
                 resultDiv.className = 'result success';
@@ -981,7 +963,6 @@
                     <p><em>No henge alignment found in the next ${result.days_searched} days. The sun's path doesn't align with your street's orientation at this location.</em></p>
                     <div class="disclaimer">
                         <p><span class="topic">Note: These predictions are rough calculations based on various assumptions.</span> For official city-wide henge events (like Manhattanhenge), check official announcements as they use specific reference points and may differ from street-to-street calculations here.</p>
-                        <p><span class="topic">Note: This app works best with long, straight streets.</span> If the calculated "Street Bearing" seems incorrect, try using an address further down the same street. Road curves, intersections, or unusual street layouts can affect the angle calculation.</p>
                     </div>
                 `;
                 resultDiv.className = 'result no-henge';
@@ -1063,7 +1044,7 @@
             // Reset map legend
             const mapInfo = document.querySelector('.map-info');
             if (mapInfo) {
-                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark marker shows your address. Dark arrow shows the road bearing direction (drag to adjust).';
+                mapInfo.innerHTML = '<strong>Map Legend:</strong> Dark arrow shows the road bearing direction (drag to adjust).';
             }
             
             // Re-enable map dragging and add event listeners back

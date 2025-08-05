@@ -256,7 +256,8 @@ if __name__ == "__main__":
     #address = "84 Thirlestane Rd, Edinburgh EH9 1AR, UK"
     #address = "s103 101, 1051 KT Amsterdam, Netherlands"
 
-    lat, lon = get_coordinates("address")
+    location = get_location(address)
+    lat, lon = get_coordinates(location)
     check_latitude(lat)
     print(f"Coordinates: {lat}, {lon}")
 
