@@ -715,18 +715,31 @@
                 }
             }
 
-            addSunCircle(lat, lon, bearing, color = '#DC816E', length = 70) {
+            addSunArrow(lat, lon, bearing, color = '#DC816E', length = 70) {
+                // Calculate arrow endpoint
                 const start = [lon, lat];
                 const destination = turf.destination(start, length, bearing, {units: 'meters'});
                 const endLon = destination.geometry.coordinates[0];
                 const endLat = destination.geometry.coordinates[1];
 
-                return L.circle([endLat, endLon], {
+                // Create arrow line with transparency
+                const arrowLine = L.polyline([[lat, lon], [endLat, endLon]], {
                     color: color,
-                    fillColor: color,
-                    fillOpacity: 0.8,
-                    radius: 8
-                }).addTo(this.map);
+                    weight: 4,
+                    opacity: 0.8
+                });
+
+                // Create arrowhead
+                const arrowheadLines = this.createArrowhead(destination, bearing, color, 4, 0.8);
+
+                // Add to map
+                arrowLine.addTo(this.map);
+                arrowheadLines.forEach(line => line.addTo(this.map));
+
+                return {
+                    line: arrowLine,
+                    arrowheads: arrowheadLines
+                };
             }
         }
 
@@ -904,11 +917,11 @@
                     if (data.result.henge_found) {
                         arrowManager.clear();
                         arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
-                        arrowManager.addSunCircle(currentCoordinates.lat, currentCoordinates.lon, data.result.sun_angle);
+                        arrowManager.addSunArrow(currentCoordinates.lat, currentCoordinates.lon, data.result.sun_angle);
                         
                         // Update map legend
                         document.querySelector('.map-info').innerHTML = 
-                            '<strong>Map Legend:</strong> Dark arrow shows road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>. Orange circle shows sun <span class="tooltip-term">azimuth<span class="tooltip">Angle of a celestial object (e.g. the sun) measured clockwise from True North</span></span>.';
+                            '<strong>Map Legend:</strong> Dark arrow shows road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>. Orange arrow shows sun <span class="tooltip-term">azimuth<span class="tooltip">Angle of a celestial object (e.g. the sun) measured clockwise from True North</span></span>.';
                     } else {
                         arrowManager.clear();
                         arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
