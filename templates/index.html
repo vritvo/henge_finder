@@ -481,10 +481,49 @@
         }
 
 
+        /* Mobile block styles */
+        .mobile-block {
+            display: none;
+            min-height: 100vh;
+            background: #5E4955;
+            color: #fff3ec;
+            padding: 40px 20px;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .mobile-block h1 {
+            color: #fff3ec;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .mobile-block p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            max-width: 400px;
+            margin-bottom: 15px;
+        }
+
+        .mobile-block .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Mobile block message -->
+    <div class="mobile-block" id="mobileBlock">
+        <h1>Desktop Required</h1>
+        <p>Henge Finder requires a desktop or laptop computer.</p>
+        <p>Please visit this site on a desktop browser to find your street's henge alignment.</p>
+    </div>
+
+    <div class="container" id="mainContainer">
         <h1>🌅 Henge Finder</h1>
         
         <div class="instructions">
@@ -567,6 +606,42 @@
     </div>
 
     <script>
+        // Mobile detection and blocking
+        function isMobileDevice() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            
+            // Check for mobile user agents - this catches phones, tablets, etc.
+            const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+            const isMobileUserAgent = mobileRegex.test(userAgent.toLowerCase());
+            
+            // Check for touch-only devices (but exclude desktop touch screens)
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const hasMouseSupport = window.matchMedia('(pointer: fine)').matches;
+            const isTouchOnly = isTouchDevice && !hasMouseSupport;
+            
+            // Block if mobile user agent OR touch-only device (excludes desktop touch screens)
+            return isMobileUserAgent || isTouchOnly;
+        }
+
+        function initializeApp() {
+            if (isMobileDevice()) {
+                // Show mobile block, hide main content
+                document.getElementById('mobileBlock').style.display = 'flex';
+                document.getElementById('mainContainer').style.display = 'none';
+                return;
+            }
+            
+            // Hide mobile block, show main content
+            document.getElementById('mobileBlock').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        // Re-check on window resize (in case user rotates device or resizes browser)
+        window.addEventListener('resize', initializeApp);
+
         let map = null;
         let marker = null;
         let currentAddress = null;
