@@ -428,6 +428,58 @@
             cursor: grabbing !important;
         }
 
+        /* Tooltip styles */
+        .tooltip-term {
+            color: #996888;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            cursor: help;
+            position: relative;
+            font-weight: 600;
+        }
+
+        .tooltip-term:hover {
+            color: #5E4955;
+        }
+
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #5E4955;
+            color: #fff3ec;
+            text-align: center;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: normal;
+            line-height: 1.4;
+            white-space: normal;
+            width: 200px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #5E4955 transparent transparent transparent;
+        }
+
+        .tooltip-term:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
 
     </style>
 </head>
@@ -495,7 +547,7 @@
             </div>
             <div class="bearing-controls">
                 <div class="bearing-info">
-                    <span>Road Bearing:</span>
+                    <span>Road <span class="tooltip-term">Bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>:</span>
                     <span class="bearing-value" id="bearingValue">0°</span>
                 </div>
                 <div class="bearing-buttons">
@@ -503,7 +555,7 @@
                 </div>
             </div>
             <div class="map-info">
-                <strong>Map Legend:</strong> Dark arrow shows the road bearing direction (drag to adjust).
+                <strong>Map Legend:</strong> Dark arrow shows the road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span> direction (drag to adjust).
             </div>
             <div class="main-action">
                 <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em; text-align: left;">Step 3: Find henge</h3>
@@ -856,13 +908,13 @@
                         
                         // Update map legend
                         document.querySelector('.map-info').innerHTML = 
-                            '<strong>Map Legend:</strong> Dark arrow shows road bearing. Orange circle shows sun azimuth.';
+                            '<strong>Map Legend:</strong> Dark arrow shows road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>. Orange circle shows sun <span class="tooltip-term">azimuth<span class="tooltip">Angle of a celestial object (e.g. the sun) measured clockwise from True North</span></span>.';
                     } else {
                         arrowManager.clear();
                         arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
                         
                         document.querySelector('.map-info').innerHTML = 
-                            '<strong>Map Legend:</strong> Dark arrow shows road bearing.';
+                            '<strong>Map Legend:</strong> Dark arrow shows road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>.';
                     }
                     
                     // Hide interactive elements
@@ -959,8 +1011,8 @@
                 html = `
                     <h3>🎉 Henge Found!</h3>
                     <p><span class="highlight">Next Henge Date:</span> ${result.henge_time_local_str ? result.henge_time_local_str : formatDate(result.henge_date)}</p>
-                    <p><span class="highlight">Street Bearing:</span> ${data.road_bearing}° from North</p>
-                    <p><span class="highlight">Sun Azimuth:</span> ${result.sun_angle}° from North</p>
+                    <p><span class="highlight">Street <span class="tooltip-term">Bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>:</span> ${data.road_bearing}° from North</p>
+                    <p><span class="highlight">Sun <span class="tooltip-term">Azimuth<span class="tooltip">Angle of a celestial object (e.g. the sun) measured clockwise from True North</span></span>:</span> ${result.sun_angle}° from North</p>
                     <p><em>Perfect alignment! The sun will set directly down your street on this date.</em></p>
                     <div class="disclaimer">
                         <p><span class="topic">Note: These predictions are rough estimates calculations.</span> For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
@@ -970,7 +1022,7 @@
             } else {
                 html = `
                     <h3>🔍 No Henge Found</h3>
-                    <p><span class="highlight">Street Bearing:</span> ${data.road_bearing}° from North</p>
+                    <p><span class="highlight">Street <span class="tooltip-term">Bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>:</span> ${data.road_bearing}° from North</p>
                     <p><em>No henge alignment found in the next ${result.days_searched} days. The sun's path doesn't align with your street's orientation at this location.</em></p>
                     <div class="disclaimer">
                         <p><span class="topic">Note: These predictions are rough calculations based on various assumptions.</span> For official city-wide henge events (like Manhattanhenge), check official announcements as they use specific reference points and may differ from street-to-street calculations here.</p>
@@ -1036,7 +1088,7 @@
             if (step3Header) step3Header.style.display = 'block';
             
             document.querySelector('.map-info').innerHTML = 
-                '<strong>Map Legend:</strong> Dark arrow shows the road bearing direction (drag to adjust).';
+                '<strong>Map Legend:</strong> Dark arrow shows the road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span> direction (drag to adjust).';
             
             if (map) {
                 map.dragging.enable();
