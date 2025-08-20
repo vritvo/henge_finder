@@ -448,6 +448,7 @@
         let currentCoordinates = null;
         let originalBearing = 0;
         let currentBearing = 0;
+        let originalZoom = 18;
         let isInteractiveMode = false;
         let isDragging = false;
 
@@ -635,13 +636,17 @@
             currentCoordinates = { lat, lon };
             originalBearing = roadBearing;
             currentBearing = roadBearing;
+            originalZoom = 18;
             
             // Update bearing display
             document.getElementById('bearingValue').textContent = `${roadBearing.toFixed(1)}°`;
             
             // Initialize map if it doesn't exist
             if (!map) {
-                map = L.map('map').setView([lat, lon], 18);
+                map = L.map('map', {
+                    minZoom: 16,
+                    maxZoom: 18
+                }).setView([lat, lon], originalZoom);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
@@ -653,7 +658,7 @@
                 map.on('mousemove', onMapMouseMove);
                 map.on('mouseup', onMapMouseUp);
             } else {
-                map.setView([lat, lon], 18);
+                map.setView([lat, lon], originalZoom);
                 map.eachLayer((layer) => {
                     if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.Circle) {
                         map.removeLayer(layer);
@@ -820,6 +825,11 @@
                 currentBearing = originalBearing;
                 arrowManager.updateArrow(originalBearing);
                 document.getElementById('bearingValue').textContent = `${originalBearing.toFixed(1)}°`;
+                
+                // Reset zoom level to original
+                if (map && currentCoordinates) {
+                    map.setView([currentCoordinates.lat, currentCoordinates.lon], originalZoom);
+                }
             });
         });
 
@@ -933,6 +943,7 @@
             currentCoordinates = null;
             originalBearing = 0;
             currentBearing = 0;
+            originalZoom = 18;
             isInteractiveMode = false;
             isDragging = false;
             
