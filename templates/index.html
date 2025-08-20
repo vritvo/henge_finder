@@ -417,7 +417,7 @@
             <p>May take a second...</p>
         </div>
 
-        <div class="result" id="result"></div>
+        <div class="result" id="addressResult"></div>
         
         <div class="map-container" id="mapContainer" style="display: none;">
             <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 2: Adjust the arrow to match the street's direction</h3>
@@ -439,6 +439,8 @@
                 <button class="main-btn" id="calculateHengeBtn">Let's go!</button>
             </div>
         </div>
+
+        <div class="result" id="hengeResult" style="display: none;"></div>
     </div>
 
     <script>
@@ -609,7 +611,7 @@
 
         // Function to display address lookup results
         function displayAddressLookup(data) {
-            const resultDiv = document.getElementById('result');
+            const addressResultDiv = document.getElementById('addressResult');
             
             let html = `
                 <p><span class="highlight">Address:</span> ${data.address}</p>
@@ -618,9 +620,9 @@
                 </div>
             `;
             
-            resultDiv.innerHTML = html;
-            resultDiv.className = 'result address';
-            resultDiv.style.display = 'block';
+            addressResultDiv.innerHTML = html;
+            addressResultDiv.className = 'result address';
+            addressResultDiv.style.display = 'block';
             
             // Display the map with interactive arrow
             displayMap(data.coordinates.lat, data.coordinates.lon, data.road_bearing);
@@ -752,11 +754,11 @@
         async function calculateHenge() {
             const calculateBtn = document.getElementById('calculateHengeBtn');
             const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
+            const hengeResult = document.getElementById('hengeResult');
             
             calculateBtn.disabled = true;
             loading.style.display = 'block';
-            result.style.display = 'none';
+            hengeResult.style.display = 'none';
             
             try {
                 const response = await fetch('/lookup_address', {
@@ -840,13 +842,15 @@
             const address = document.getElementById('address').value;
             const submitBtn = document.getElementById('submitBtn');
             const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
+            const addressResult = document.getElementById('addressResult');
+            const hengeResult = document.getElementById('hengeResult');
             
             resetToInitialState();
             
             submitBtn.disabled = true;
             loading.style.display = 'block';
-            result.style.display = 'none';
+            addressResult.style.display = 'none';
+            hengeResult.style.display = 'none';
             document.getElementById('mapContainer').style.display = 'none';
             
             try {
@@ -863,11 +867,11 @@
                 if (response.ok) {
                     displayAddressLookup(data);
                 } else {
-                    displayError(data.error);
+                    displayError(data.error, 'addressResult');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                displayError('Network error. Please try again.');
+                displayError('Network error. Please try again.', 'addressResult');
             } finally {
                 submitBtn.disabled = false;
                 loading.style.display = 'none';
@@ -875,7 +879,7 @@
         });
 
         function displayResult(data) {
-            const resultDiv = document.getElementById('result');
+            const hengeResultDiv = document.getElementById('hengeResult');
             const result = data.result;
             
             let html = '';
@@ -891,7 +895,7 @@
                         <p><span class="topic">Note: These predictions are rough estimates calculations.</span> For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
                     </div>
                 `;
-                resultDiv.className = 'result success';
+                hengeResultDiv.className = 'result success';
             } else {
                 html = `
                     <h3>🔍 No Henge Found</h3>
@@ -901,37 +905,28 @@
                         <p><span class="topic">Note: These predictions are rough calculations based on various assumptions.</span> For official city-wide henge events (like Manhattanhenge), check official announcements as they use specific reference points and may differ from street-to-street calculations here.</p>
                     </div>
                 `;
-                resultDiv.className = 'result no-henge';
+                hengeResultDiv.className = 'result no-henge';
             }
             
-            resultDiv.innerHTML = html;
-            resultDiv.style.display = 'block';
+            hengeResultDiv.innerHTML = html;
+            hengeResultDiv.style.display = 'block';
         }
 
-        function displayError(message) {
-            const errorDiv = document.createElement('div');
+        function displayError(message, container = 'hengeResult') {
+            const errorDiv = document.getElementById(container);
+            
             errorDiv.innerHTML = `
                 <h3>❌ Error</h3>
                 <p>${message}</p>
             `;
-            errorDiv.style.cssText = `
-                margin-top: 30px;
-                padding: 20px;
-                border-radius: 10px;
-                background: #fbe6ec;
-                border: 1px solid #f5c6cb;
-                color: #7c4279;
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-            `;
+            errorDiv.className = 'result error';
+            errorDiv.style.display = 'block';
             
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '';
-            resultDiv.appendChild(errorDiv);
-            resultDiv.style.display = 'block';
-            
-            document.getElementById('mapContainer').style.display = 'none';
+            // Hide other containers if showing address error
+            if (container === 'addressResult') {
+                document.getElementById('mapContainer').style.display = 'none';
+                document.getElementById('hengeResult').style.display = 'none';
+            }
         }
 
         function resetToInitialState() {
