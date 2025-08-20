@@ -235,9 +235,71 @@
             border: 2px solid #e1e5e9;
         }
 
+        .step-instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 0 0 15px 0;
+            border-left: 4px solid #DC816E;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .step-instructions p {
+            margin: 0;
+            color: #2A2B2A;
+            line-height: 1.5;
+            font-size: 0.95em;
+        }
+
         #map {
             height: 500px;
             width: 100%;
+            position: relative;
+        }
+
+        .compass-container {
+            position: relative;
+            padding: 0 30px;
+        }
+
+        .compass-marker {
+            position: absolute;
+            background: rgba(94, 73, 85, 0.9);
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .compass-north {
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .compass-south {
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .compass-east {
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .compass-west {
+            left: 2px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .map-info {
@@ -421,7 +483,16 @@
         
         <div class="map-container" id="mapContainer" style="display: none;">
             <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 2: Adjust the arrow to match the street's direction</h3>
-            <div id="map"></div>
+            <div class="step-instructions">
+                <p>We've estimated your street's direction from map data. <strong>If the arrow aligns with your street, you're all set!</strong> If not, drag the arrow handle to match the street direction you want the henge for.</p>
+            </div>
+            <div class="compass-container">
+                <div class="compass-marker compass-north">N</div>
+                <div class="compass-marker compass-south">S</div>
+                <div class="compass-marker compass-east">E</div>
+                <div class="compass-marker compass-west">W</div>
+                <div id="map"></div>
+            </div>
             <div class="bearing-controls">
                 <div class="bearing-info">
                     <span>Road Bearing:</span>
