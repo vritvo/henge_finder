@@ -428,6 +428,11 @@
             cursor: grabbing !important;
         }
 
+        /* Toggle/Summary hover effects */
+        summary:hover {
+            background-color: #e9ecef !important;
+        }
+
         /* Tooltip styles */
         .tooltip-term {
             color: #996888;
@@ -527,18 +532,28 @@
         <h1>🌅 Henge Finder</h1>
         
         <div class="instructions">
-            <h3>What is a henge?</h3>
-            <ol style="color: #2A2B2A; line-height: 1.6; margin-left: 20px;">
-                <p>A 'henge' is when the sun sets perfectly in line with your street, creating a dramatic view — like <a href="https://en.wikipedia.org/wiki/Manhattanhenge" target="_blank" style="color: #996888; text-decoration: none;">Manhattanhenge</a> in New York. </p>
-                <p>Use this tool to find when the next henge will happen for your street. </p>
-
-            </ol>
+            <details>
+                <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px; padding: 15px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e1e5e9; transition: background-color 0.2s;">
+                    <span style="font-size: 1.4em;">What is a henge?</span>
+                </summary>
+                <div style="display: flex; align-items: flex-start; gap: 20px; margin-top: 15px;">
+                    <div style="flex: 1;">
+                        <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 15px;">A 'henge' is when the sun sets perfectly in line with your street, creating a dramatic view — like <a href="https://en.wikipedia.org/wiki/Manhattanhenge" target="_blank" style="color: #996888; text-decoration: none;">Manhattanhenge</a> in New York.</p>
+                        <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 0;">Use this tool to find when the next henge will happen for your street.</p>
+                    </div>
+                    <div style="flex-shrink: 0; max-width: 300px;">
+                        <img src="{{ url_for('static', filename='images/city_henge.png') }}" 
+                             alt="Example of a street henge with the sun aligned down a city street" 
+                             style="width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                    </div>
+                </div>
+            </details>
         </div>
 
         <div class="instructions">
             <details>
-                <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px;">
-                    <span style="font-size: 1.2em;">What makes a good street for a henge?</span>
+                <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px; padding: 15px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e1e5e9; transition: background-color 0.2s;">
+                    <span style="font-size: 1.4em;">What makes a good street for a henge?</span>
                 </summary>
                 <p style="color: #2A2B2A; margin-bottom: 15px;"><em>(Tips for finding the best henge view)</em></p>
                 <ul style="color: #2A2B2A; line-height: 1.6; margin-left: 20px; margin-bottom: 20px;">
@@ -553,7 +568,7 @@
                 <ul style="color: #2A2B2A; line-height: 1.6; margin-left: 20px;">
                     <li><a href="https://www.google.com/maps/place/251+W+42nd+St,+New+York,+NY+10036/@40.7570115,-73.9893081,18z/data=!4m15!1m8!3m7!1s0x89c2585360bfe5e7:0xd3b373353146c43f!2s251+W+42nd+St,+New+York,+NY+10036!3b1!8m2!3d40.757119!4d-73.9891884!16s%2Fg%2F11nnknww84!3m5!1s0x89c2585360bfe5e7:0xd3b373353146c43f!8m2!3d40.757119!4d-73.9891884!16s%2Fg%2F11nnknww84?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">251 W 42nd St, New York, NY</a>, by Times Square</li>
                     <li><a href="https://www.google.com/maps/place/601+E+76th+St,+Chicago,+IL+60619/@41.756679,-87.61279,17z/data=!3m1!4b1!4m5!3m4!1s0x880e28c816730d29:0x111671091e24efc4!8m2!3d41.756675!4d-87.6102151?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">601-615 E 76th St, Chicago, IL</a></li>
-                    <li><a href="https://www.google.com/maps/place/s103+101,+1051+KT+Amsterdam,+Netherlands/@52.3851828,4.8678888,15.49z/data=!4m6!3m5!1s0x47c609d5b3c9cce7:0xd21ca7a91da6de42!8m2!3d52.385346!4d4.874272!16s%2Fg%2F11rk0dc6fl?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">s103 101, 1051 KT Amsterdam, Netherlands</a>, along the canal by the Wester Park</li>
+                    <li><a href="https://www.google.com/maps/place/Haarlemmerweg+109-C,+1051+KV+Amsterdam,+Netherlands/@52.3853326,4.8733117,19z/data=!3m1!4b1!4m6!3m5!1s0x47c609d5b0e41589:0xf6191c1b666122c1!8m2!3d52.3853318!4d4.8739554!16s%2Fg%2F11nnkplcpz?entry=ttu&g_ep=EgoyMDI1MDgyNC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">Haarlemmerweg 109-C, 1051 KV Amsterdam, Netherlands</a>, along the canal by the Wester Park</li>
                 </ul>
             </details>
         </div>
