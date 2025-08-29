@@ -80,7 +80,8 @@ def get_road_bearing(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="all"):
     #TODO: This works for many streets, but is not always reliable (curb, intersection, etc)
 
     # get a network around the point
-    G = ox.graph_from_point((lat, lon), dist=dist, network_type=network_type)
+    # we use truncate_by_edge=True to make sure we get all edges within the distance
+    G = ox.graph_from_point((lat, lon), dist=dist, network_type=network_type, truncate_by_edge=True)
 
     # find the single closest edge to our point
     u, v, key = ox.distance.nearest_edges(G, X=lon, Y=lat)
