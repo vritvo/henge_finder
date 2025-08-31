@@ -105,7 +105,9 @@ def get_road_bearing(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="drive"):
 
     # get a network around the point
     # we use truncate_by_edge=True to make sure we get all edges within the distance
-    G = ox.graph_from_point((lat, lon), dist=dist, network_type=network_type, truncate_by_edge=True)
+    G = ox.graph_from_point(
+        (lat, lon), dist=dist, network_type=network_type, truncate_by_edge=True
+    )
 
     # find the single closest edge to our point
     u, v, key = ox.distance.nearest_edges(G, X=lon, Y=lat)
