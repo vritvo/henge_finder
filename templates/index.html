@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -518,6 +519,228 @@
             opacity: 0.8;
         }
 
+        /* Tab navigation styles */
+        .tab-navigation {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e1e5e9;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2A2B2A;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: #f8f9fa;
+            transform: none;
+        }
+
+        .tab-button.active {
+            color: #5E4955;
+            border-bottom-color: #5E4955;
+            background: #f8f9fa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Educational content styles */
+        .education-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #978897;
+        }
+
+        .education-section h2 {
+            color: #5E4955;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .education-section h3 {
+            color: #5E4955;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+            margin-top: 20px;
+        }
+
+        .education-section h3:first-of-type {
+            margin-top: 0;
+        }
+
+        .education-section p {
+            color: #2A2B2A;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .education-section ul {
+            color: #2A2B2A;
+            line-height: 1.6;
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .education-section li {
+            margin-bottom: 8px;
+        }
+
+        .degree-highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #856404;
+        }
+
+        .example-box {
+            background: #e7f7f0;
+            border: 1px solid #b0e0d3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .example-box h4 {
+            color: #5E4955;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .example-box p {
+            margin-bottom: 10px;
+        }
+
+        .example-box:last-child {
+            margin-bottom: 0;
+        }
+
+        .key-concept {
+            background: #fff;
+            border: 2px solid #5E4955;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .key-concept h3 {
+            color: #5E4955;
+            margin-bottom: 10px;
+        }
+
+        .key-concept p {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        /* Solar System Visualization */
+        .solar-system-container {
+            background: #1a1a2e;
+            border-radius: 10px;
+            margin: 30px 0;
+            padding: 20px;
+            position: relative;
+        }
+
+        .solar-system-canvas {
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            display: block;
+            background: radial-gradient(circle at center, #16213e 0%, #0f0f23 100%);
+        }
+
+        .time-controls {
+            margin-top: 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .time-slider-container {
+            margin: 15px 0;
+        }
+
+        .time-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .time-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #5E4955;
+            cursor: pointer;
+        }
+
+        .time-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #5E4955;
+            cursor: pointer;
+            border: none;
+        }
+
+        .time-display {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .equinox-indicator {
+            color: #ffd700;
+            font-weight: bold;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .equinox-indicator.visible {
+            opacity: 1;
+        }
+
+        .play-pause-btn {
+            background: #5E4955;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 10px;
+        }
+
+        .play-pause-btn:hover {
+            background: #4f3d47;
+        }
+
     </style>
 </head>
 <body>
@@ -531,96 +754,213 @@
     <div class="container" id="mainContainer">
         <h1>Henge Finder</h1>
         
-        <div class="instructions">
-            <details>
-                <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px; padding: 15px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e1e5e9; transition: background-color 0.2s;">
-                    <span style="font-size: 1.4em;">What is a henge?</span>
-                </summary>
-                <div style="display: flex; align-items: flex-start; gap: 20px; margin-top: 15px;">
-                    <div style="flex: 1;">
-                        <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 15px;">A 'henge' is when the sun sets perfectly in line with your street, creating a dramatic view — like <a href="https://en.wikipedia.org/wiki/Manhattanhenge" target="_blank" style="color: #996888; text-decoration: none;">Manhattanhenge</a> in New York.</p>
-                        <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 0;">Use this tool to find when the next henge will happen for your street.</p>
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" onclick="showTab('finder')">Find a Henge</button>
+            <button class="tab-button" onclick="showTab('learn')">How It Works</button>
+        </div>
+
+        <!-- Finder Tab Content -->
+        <div class="tab-content active" id="finder-tab">
+            <div class="instructions">
+                <details>
+                    <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px; padding: 15px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e1e5e9; transition: background-color 0.2s;">
+                        <span style="font-size: 1.4em;">What is a henge?</span>
+                    </summary>
+                    <div style="display: flex; align-items: flex-start; gap: 20px; margin-top: 15px;">
+                        <div style="flex: 1;">
+                            <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 15px;">A 'henge' is when the sun sets perfectly in line with your street, creating a dramatic view — like <a href="https://en.wikipedia.org/wiki/Manhattanhenge" target="_blank" style="color: #996888; text-decoration: none;">Manhattanhenge</a> in New York.</p>
+                            <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 0;">Use this tool to find when the next henge will happen for your street.</p>
+                        </div>
+                        <div style="flex-shrink: 0; max-width: 300px;">
+                            <img src="{{ url_for('static', filename='images/city_henge.png') }}" 
+                                 alt="Example of a street henge with the sun aligned down a city street" 
+                                 style="width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                        </div>
                     </div>
-                    <div style="flex-shrink: 0; max-width: 300px;">
-                        <img src="{{ url_for('static', filename='images/city_henge.png') }}" 
-                             alt="Example of a street henge with the sun aligned down a city street" 
-                             style="width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                </details>
+            </div>
+
+            <div class="instructions">
+                <details>
+                    <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px; padding: 15px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e1e5e9; transition: background-color 0.2s;">
+                        <span style="font-size: 1.4em;">What makes a good street for a henge?</span>
+                    </summary>
+                    <p style="color: #2A2B2A; margin-bottom: 15px;"><em>(Tips for finding the best henge view)</em></p>
+                    <ul style="color: #2A2B2A; line-height: 1.6; margin-left: 20px; margin-bottom: 20px;">
+                        <li><strong>Pick a long, straight road with a clear view of the horizon.</strong><br>
+                        Henges work best when you can actually see the sun touch the horizon. Curvy streets won't align well, and wider streets tend to give better views.</li>
+                        <li><strong>Aim for a mostly east–west street.</strong><br>
+                        The sun won't set along a north–south road. It doesn't have to be perfect — the sunset shifts a little each day.</li>
+                        <li><strong>Avoid entering an intersection address if possible.</strong><br>
+                        It's not necessary for this to work, but it will be faster.</li>
+                    </ul>
+                    <p style="color: #2A2B2A; margin-bottom: 10px;"><strong>Example Streets:</strong></p>
+                    <ul style="color: #2A2B2A; line-height: 1.6; margin-left: 20px;">
+                        <li><a href="https://www.google.com/maps/place/251+W+42nd+St,+New+York,+NY+10036/@40.7570115,-73.9893081,18z/data=!4m15!1m8!3m7!1s0x89c2585360bfe5e7:0xd3b373353146c43f!2s251+W+42nd+St,+New+York,+NY+10036!3b1!8m2!3d40.757119!4d-73.9891884!16s%2Fg%2F11nnknww84!3m5!1s0x89c2585360bfe5e7:0xd3b373353146c43f!8m2!3d40.757119!4d-73.9891884!16s%2Fg%2F11nnknww84?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">251 W 42nd St, New York, NY</a>, by Times Square</li>
+                        <li><a href="https://www.google.com/maps/place/601+E+76th+St,+Chicago,+IL+60619/@41.756679,-87.61279,17z/data=!3m1!4b1!4m5!3m4!1s0x880e28c816730d29:0x111671091e24efc4!8m2!3d41.756675!4d-87.6102151?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">601-615 E 76th St, Chicago, IL</a></li>
+                        <li><a href="https://www.google.com/maps/place/Haarlemmerweg+109-C,+1051+KV+Amsterdam,+Netherlands/@52.3853326,4.8733117,19z/data=!3m1!4b1!4m6!3m5!1s0x47c609d5b0e41589:0xf6191c1b666122c1!8m2!3d52.3853318!4d4.8739554!16s%2Fg%2F11nnkplcpz?entry=ttu&g_ep=EgoyMDI1MDgyNC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">Haarlemmerweg 109-C, 1051 KV Amsterdam, Netherlands</a>, along the canal by the Wester Park</li>
+                    </ul>
+                </details>
+            </div>
+            <form id="hengeForm">
+                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 1: Enter an address</h3>
+                <div class="form-group">
+                    <input type="text" id="address" name="address" placeholder="e.g., 251 W 42nd St, New York, NY 10036" required>
+                </div>
+                <button type="submit" id="submitBtn">Find Address</button>
+            </form>
+
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>May take a second...</p>
+            </div>
+
+            <div class="result" id="addressResult"></div>
+            
+            <div class="map-container" id="mapContainer" style="display: none;">
+                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 2: Adjust the arrow to match the street's direction</h3>
+                <div class="step-instructions">
+                    <p>We've estimated your street's direction from map data. <strong>If the arrow aligns with your street, you're all set!</strong> If not, drag the arrow handle to match the street direction you want the henge for.</p>
+                </div>
+                <div class="compass-container">
+                    <div class="compass-marker compass-north">N</div>
+                    <div class="compass-marker compass-south">S</div>
+                    <div class="compass-marker compass-east">E</div>
+                    <div class="compass-marker compass-west">W</div>
+                    <div id="map"></div>
+                </div>
+                <div class="bearing-controls">
+                    <div class="bearing-info">
+                        <span>Road <span class="tooltip-term">Bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>:</span>
+                        <span class="bearing-value" id="bearingValue">0°</span>
+                    </div>
+                    <div class="bearing-buttons">
+                        <button class="bearing-btn reset-btn" id="resetBtn">Reset to Original</button>
                     </div>
                 </div>
-            </details>
-        </div>
-
-        <div class="instructions">
-            <details>
-                <summary style="cursor: pointer; color: #5E4955; font-weight: 600; margin-bottom: 10px; padding: 15px; border-radius: 8px; background: #f8f9fa; border: 1px solid #e1e5e9; transition: background-color 0.2s;">
-                    <span style="font-size: 1.4em;">What makes a good street for a henge?</span>
-                </summary>
-                <p style="color: #2A2B2A; margin-bottom: 15px;"><em>(Tips for finding the best henge view)</em></p>
-                <ul style="color: #2A2B2A; line-height: 1.6; margin-left: 20px; margin-bottom: 20px;">
-                    <li><strong>Pick a long, straight road with a clear view of the horizon.</strong><br>
-                    Henges work best when you can actually see the sun touch the horizon. Curvy streets won't align well, and wider streets tend to give better views.</li>
-                    <li><strong>Aim for a mostly east–west street.</strong><br>
-                    The sun won't set along a north–south road. It doesn't have to be perfect — the sunset shifts a little each day.</li>
-                    <li><strong>Avoid entering an intersection address if possible.</strong><br>
-                    It's not necessary for this to work, but it will be faster.</li>
-                </ul>
-                <p style="color: #2A2B2A; margin-bottom: 10px;"><strong>Example Streets:</strong></p>
-                <ul style="color: #2A2B2A; line-height: 1.6; margin-left: 20px;">
-                    <li><a href="https://www.google.com/maps/place/251+W+42nd+St,+New+York,+NY+10036/@40.7570115,-73.9893081,18z/data=!4m15!1m8!3m7!1s0x89c2585360bfe5e7:0xd3b373353146c43f!2s251+W+42nd+St,+New+York,+NY+10036!3b1!8m2!3d40.757119!4d-73.9891884!16s%2Fg%2F11nnknww84!3m5!1s0x89c2585360bfe5e7:0xd3b373353146c43f!8m2!3d40.757119!4d-73.9891884!16s%2Fg%2F11nnknww84?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">251 W 42nd St, New York, NY</a>, by Times Square</li>
-                    <li><a href="https://www.google.com/maps/place/601+E+76th+St,+Chicago,+IL+60619/@41.756679,-87.61279,17z/data=!3m1!4b1!4m5!3m4!1s0x880e28c816730d29:0x111671091e24efc4!8m2!3d41.756675!4d-87.6102151?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">601-615 E 76th St, Chicago, IL</a></li>
-                    <li><a href="https://www.google.com/maps/place/Haarlemmerweg+109-C,+1051+KV+Amsterdam,+Netherlands/@52.3853326,4.8733117,19z/data=!3m1!4b1!4m6!3m5!1s0x47c609d5b0e41589:0xf6191c1b666122c1!8m2!3d52.3853318!4d4.8739554!16s%2Fg%2F11nnkplcpz?entry=ttu&g_ep=EgoyMDI1MDgyNC4wIKXMDSoASAFQAw%3D%3D" target="_blank" style="color: #996888; text-decoration: none;">Haarlemmerweg 109-C, 1051 KV Amsterdam, Netherlands</a>, along the canal by the Wester Park</li>
-                </ul>
-            </details>
-        </div>
-        <form id="hengeForm">
-            <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 1: Enter an address</h3>
-            <div class="form-group">
-                <input type="text" id="address" name="address" placeholder="e.g., 251 W 42nd St, New York, NY 10036" required>
-            </div>
-            <button type="submit" id="submitBtn">Find Address</button>
-        </form>
-
-        <div class="loading" id="loading" style="display: none;">
-            <div class="spinner"></div>
-            <p>May take a second...</p>
-        </div>
-
-        <div class="result" id="addressResult"></div>
-        
-        <div class="map-container" id="mapContainer" style="display: none;">
-            <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 2: Adjust the arrow to match the street's direction</h3>
-            <div class="step-instructions">
-                <p>We've estimated your street's direction from map data. <strong>If the arrow aligns with your street, you're all set!</strong> If not, drag the arrow handle to match the street direction you want the henge for.</p>
-            </div>
-            <div class="compass-container">
-                <div class="compass-marker compass-north">N</div>
-                <div class="compass-marker compass-south">S</div>
-                <div class="compass-marker compass-east">E</div>
-                <div class="compass-marker compass-west">W</div>
-                <div id="map"></div>
-            </div>
-            <div class="bearing-controls">
-                <div class="bearing-info">
-                    <span>Road <span class="tooltip-term">Bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>:</span>
-                    <span class="bearing-value" id="bearingValue">0°</span>
+                <div class="map-info">
+                    <strong>Map Legend:</strong> Dark arrow shows the road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span> direction (drag to adjust).
                 </div>
-                <div class="bearing-buttons">
-                    <button class="bearing-btn reset-btn" id="resetBtn">Reset to Original</button>
+                <div class="main-action">
+                    <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em; text-align: left;">Step 3: Find henge</h3>
+                    <button class="main-btn" id="calculateHengeBtn">Let's go!</button>
                 </div>
             </div>
-            <div class="map-info">
-                <strong>Map Legend:</strong> Dark arrow shows the road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span> direction (drag to adjust).
-            </div>
-            <div class="main-action">
-                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em; text-align: left;">Step 3: Find henge</h3>
-                <button class="main-btn" id="calculateHengeBtn">Let's go!</button>
-            </div>
+
+            <div class="result" id="hengeResult" style="display: none;"></div>
         </div>
 
-        <div class="result" id="hengeResult" style="display: none;"></div>
-    </div>
+        <!-- Learn Tab Content -->
+        <div class="tab-content" id="learn-tab">
+            <div class="education-section">
+                <h2>🌅 Why Do Henges Happen So Rarely?</h2>
+                <p>You might think that henges would happen all the time for any east-west street, but they're actually quite rare! Here's why:</p>
+                
+                <div class="key-concept">
+                    <h3>🌍 Earth's Tilt Changes Everything</h3>
+                    <p>Earth is tilted <span class="degree-highlight">~23.5°</span> on its axis, which means the sun's path across the sky changes throughout the year.</p>
+                </div>
 
-    <script>
+                <h3>The Sun's Changing Path</h3>
+                <p>The sun only sets at <strong>true west (270°)</strong> twice a year — during the spring and fall equinoxes. For the rest of the year, it sets either north or south of true west:</p>
+                
+                <div class="solar-system-container">
+                    <canvas id="solarSystemCanvas" class="solar-system-canvas"></canvas>
+                    <div class="time-controls">
+                        <div class="time-display" id="timeDisplay">Day 1 of Year</div>
+                        <div class="time-slider-container">
+                            <input type="range" id="timeSlider" class="time-slider" min="0" max="365" value="0" step="1">
+                        </div>
+                        <button id="playPauseBtn" class="play-pause-btn">▶ Play</button>
+                        <div class="equinox-indicator" id="equinoxIndicator">🌅 Equinox - Sun sets due west!</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="education-section">
+                <h2>🌞 Why This Creates Rare Alignments</h2>
+                <p>Most city streets aren't perfectly aligned with true east-west. This creates interesting alignment patterns:</p>
+
+                <div class="example-box">
+                    <h4>🏙️ Chicago Example</h4>
+                    <p><strong>Street bearing:</strong> <span class="degree-highlight">270°</span> (true east-west)</p>
+                    <p><strong>Henge dates:</strong> Spring and fall equinoxes (around March 20 & September 22)</p>
+                    <p>Chicago's grid is aligned with the cardinal directions, so henges happen when the sun sets due west.</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>🗽 Manhattan Example</h4>
+                    <p><strong>Street bearing:</strong> <span class="degree-highlight">299°</span> (northwest orientation)</p>
+                    <p><strong>Henge dates:</strong> Late May and mid-July</p>
+                    <p>Manhattan's grid is rotated, so henges happen when the sun's path matches this tilted orientation — which only occurs twice per year as the sun's path shifts from summer to winter patterns.</p>
+                </div>
+            </div>
+
+            <div class="education-section">
+                <h2>🌞 The Science Behind Henges</h2>
+                
+                <h3>Earth's Axial Tilt</h3>
+                <p>Earth's <span class="degree-highlight">23.5°</span> tilt is what gives us seasons. This tilt also means the sun's position at sunset moves in a predictable pattern throughout the year:</p>
+                <ul>
+                    <li><strong>Summer solstice:</strong> Sun sets furthest north of west</li>
+                    <li><strong>Winter solstice:</strong> Sun sets furthest south of west</li>
+                    <li><strong>Equinoxes:</strong> Sun sets due west</li>
+                </ul>
+
+                <h3>Street Orientation Matters</h3>
+                <p>The key to a henge is the relationship between your street's orientation and the sun's seasonal path:</p>
+                <ul>
+                    <li><strong>Perfect east-west streets (270°):</strong> Get henges at equinoxes</li>
+                    <li><strong>Northwest-oriented streets:</strong> Get henges in late spring/early summer</li>
+                    <li><strong>Southwest-oriented streets:</strong> Get henges in late summer/early winter</li>
+                    <li><strong>North-south streets:</strong> Never get henges (sun doesn't set along them)</li>
+                </ul>
+
+                <h3>Why Only Twice Per Year?</h3>
+                <p>For any given street orientation, the sun's azimuth (compass direction) at sunset matches that orientation exactly twice as it sweeps through its annual cycle. Think of it like a pendulum — it passes through any given point twice per swing.</p>
+            </div>
+
+            <div class="education-section">
+                <h2>🔍 Technical Details</h2>
+                
+                <h3>What This Tool Calculates</h3>
+                <p>This henge finder looks for when the sun's azimuth (compass direction) at <span class="degree-highlight">0.5° altitude</span> matches your street's bearing within <span class="degree-highlight">1°</span>.</p>
+                
+                <h3>Why 0.5° Altitude?</h3>
+                <p>We use 0.5° above the horizon instead of exactly at sunset because:</p>
+                <ul>
+                    <li>It's when the sun appears largest and most dramatic</li>
+                    <li>It accounts for atmospheric refraction</li>
+                    <li>It provides the best viewing experience before the sun disappears</li>
+                </ul>
+
+                <h3>Street Bearing Detection</h3>
+                <p>The tool automatically detects your street's orientation using OpenStreetMap data, but you can adjust it manually if needed. Street bearings are measured clockwise from true north (0° = north, 90° = east, 180° = south, 270° = west).</p>
+            </div>
+
+            <div class="education-section">
+                <h2>🌎 Famous Henges Around the World</h2>
+                
+                <div class="example-box">
+                    <h4>Manhattanhenge (New York)</h4>
+                    <p>The most famous urban henge, occurring around May 28 and July 13 when the sun aligns with Manhattan's tilted street grid.</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>Chicagohenge (Chicago)</h4>
+                    <p>Happens during equinoxes when the sun sets due west along Chicago's cardinal-aligned streets.</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>Torontohenge (Toronto)</h4>
+                    <p>Occurs along Toronto's east-west streets, with timing similar to other cities at similar latitudes.</p>
+                </div>
+
+                <p><em>Try the finder tool with addresses from these cities to see their henge patterns!</em></p>
+            </div>
+        </div>
+    </div>    <script>
         // Mobile detection and blocking
         function isMobileDevice() {
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -1209,6 +1549,277 @@
                 minute: '2-digit'
             });
         }
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+
+            // Initialize solar system if switching to learn tab
+            if (tabName === 'learn' && !window.solarSystemInitialized) {
+                initSolarSystem();
+                window.solarSystemInitialized = true;
+            }
+        }
+
+        // Solar System Visualization
+        let solarScene, solarRenderer, solarCamera;
+        let sun, earth, earthGroup;
+        let animationId;
+        let isPlaying = false;
+        let currentDay = 0;
+
+        function initSolarSystem() {
+            const canvas = document.getElementById('solarSystemCanvas');
+            if (!canvas) return;
+
+            // Scene setup
+            solarScene = new THREE.Scene();
+            solarCamera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            solarRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            solarRenderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            solarRenderer.shadowMap.enabled = true;
+            solarRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
+            solarScene.add(ambientLight);
+
+            // Sun (point light source)
+            const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
+            const sunMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff,
+                emissive: 0xffaa00,
+                emissiveIntensity: 0.8
+            });
+            sun = new THREE.Mesh(sunGeometry, sunMaterial);
+            solarScene.add(sun);
+
+            // Sun light
+            const sunLight = new THREE.PointLight(0xffffff, 2, 100);
+            sunLight.position.set(0, 0, 0);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            solarScene.add(sunLight);
+
+            // Earth group (for orbital motion)
+            earthGroup = new THREE.Group();
+            solarScene.add(earthGroup);
+
+            // Earth
+            const earthGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+            
+            // Custom shader material for day/night terminator
+            const earthMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    sunPosition: { value: new THREE.Vector3(0, 0, 0) }
+                },
+                vertexShader: `
+                    varying vec3 vWorldPosition;
+                    varying vec3 vNormal;
+                    
+                    void main() {
+                        vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 sunPosition;
+                    varying vec3 vWorldPosition;
+                    varying vec3 vNormal;
+                    
+                    void main() {
+                        // Direction from earth surface to sun
+                        vec3 sunDirection = normalize(sunPosition - vWorldPosition);
+                        
+                        // Simple day/night based on whether surface faces sun
+                        float sunAlignment = dot(vNormal, sunDirection);
+                        
+                        // Sharp terminator line
+                        float lightIntensity = step(0.0, sunAlignment);
+                        
+                        // Earth colors
+                        vec3 dayColor = vec3(0.3, 0.7, 0.9);   // Bright blue
+                        vec3 nightColor = vec3(0.05, 0.05, 0.15); // Dark blue
+                        
+                        vec3 finalColor = mix(nightColor, dayColor, lightIntensity);
+                        
+                        gl_FragColor = vec4(finalColor, 1.0);
+                    }
+                `
+            });
+
+            earth = new THREE.Mesh(earthGeometry, earthMaterial);
+            earth.position.set(8, 0, 0); // Distance from sun
+            
+            // Create equator ring (shows axial tilt) - make it more visible
+            const equatorGeometry = new THREE.RingGeometry(0.82, 0.91, 64);
+            const equatorMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffff00, 
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.95
+            });
+            const equatorRing = new THREE.Mesh(equatorGeometry, equatorMaterial);
+            equatorRing.rotation.x = Math.PI / 2; // Make it horizontal initially
+            
+            // Add a second, slightly larger ring for better visibility
+            const equatorGeometry2 = new THREE.RingGeometry(0.80, 0.93, 64);
+            const equatorMaterial2 = new THREE.MeshBasicMaterial({ 
+                color: 0xffaa00, 
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.4
+            });
+            const equatorRing2 = new THREE.Mesh(equatorGeometry2, equatorMaterial2);
+            equatorRing2.rotation.x = Math.PI / 2;
+            
+            // Tilt the equator by 30 degrees to show Earth's axial tilt (more pronounced)
+            const tiltAngle = THREE.MathUtils.degToRad(30);
+            equatorRing.rotation.z = tiltAngle;
+            equatorRing2.rotation.z = tiltAngle;
+            
+            earth.add(equatorRing);
+            earth.add(equatorRing2);
+            earthGroup.add(earth);
+
+            // Camera position
+            solarCamera.position.set(0, 8, 12);
+            solarCamera.lookAt(0, 0, 0);
+
+            // Controls
+            setupSolarSystemControls();
+            
+            // Start animation
+            animate();
+        }
+
+        function setupSolarSystemControls() {
+            const timeSlider = document.getElementById('timeSlider');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const timeDisplay = document.getElementById('timeDisplay');
+            const equinoxIndicator = document.getElementById('equinoxIndicator');
+
+            if (!timeSlider || !playPauseBtn) return;
+
+            timeSlider.addEventListener('input', (e) => {
+                currentDay = parseInt(e.target.value);
+                updateSolarSystem();
+                updateTimeDisplay();
+            });
+
+            playPauseBtn.addEventListener('click', () => {
+                isPlaying = !isPlaying;
+                playPauseBtn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+            });
+
+            function updateTimeDisplay() {
+                const month = Math.floor(currentDay / 30.44) + 1;
+                const dayOfMonth = Math.floor((currentDay % 30.44)) + 1;
+                timeDisplay.textContent = `Day ${currentDay + 1} of Year (Month ${month}, Day ${dayOfMonth})`;
+                
+                // Check for equinoxes (around day 79 and 266)
+                const isEquinox = (currentDay >= 78 && currentDay <= 82) || (currentDay >= 264 && currentDay <= 268);
+                if (isEquinox) {
+                    equinoxIndicator.classList.add('visible');
+                } else {
+                    equinoxIndicator.classList.remove('visible');
+                }
+            }
+
+            updateTimeDisplay();
+        }
+
+        function updateSolarSystem() {
+            if (!earthGroup || !earth) return;
+
+            // Earth orbital position (365 days = full circle)
+            const orbitalAngle = (currentDay / 365) * Math.PI * 2;
+            earthGroup.rotation.y = orbitalAngle;
+
+            // Earth rotation (daily spin) - only for visual effect
+            earth.rotation.y = (currentDay * 5) * Math.PI / 180; // Slower rotation for better visibility
+
+            // Update shader uniforms for day/night terminator
+            // The sun is always at (0,0,0), so we need the earth's world position
+            const earthWorldPosition = new THREE.Vector3();
+            earth.getWorldPosition(earthWorldPosition);
+            
+            if (earth.material.uniforms) {
+                // Sun position in world coordinates (always at origin)
+                earth.material.uniforms.sunPosition.value.set(0, 0, 0);
+            }
+
+            // Update time slider
+            const timeSlider = document.getElementById('timeSlider');
+            if (timeSlider) {
+                timeSlider.value = currentDay;
+            }
+        }
+
+        function animate() {
+            if (!solarRenderer || !solarScene || !solarCamera) return;
+
+            animationId = requestAnimationFrame(animate);
+
+            // Auto-advance time if playing
+            if (isPlaying) {
+                currentDay = (currentDay + 1) % 365;
+                updateSolarSystem();
+                
+                const timeDisplay = document.getElementById('timeDisplay');
+                const equinoxIndicator = document.getElementById('equinoxIndicator');
+                
+                if (timeDisplay) {
+                    const month = Math.floor(currentDay / 30.44) + 1;
+                    const dayOfMonth = Math.floor((currentDay % 30.44)) + 1;
+                    timeDisplay.textContent = `Day ${currentDay + 1} of Year (Month ${month}, Day ${dayOfMonth})`;
+                    
+                    // Check for equinoxes (around day 79 and 266)
+                    const isEquinox = (currentDay >= 78 && currentDay <= 82) || (currentDay >= 264 && currentDay <= 268);
+                    if (equinoxIndicator) {
+                        if (isEquinox) {
+                            equinoxIndicator.classList.add('visible');
+                        } else {
+                            equinoxIndicator.classList.remove('visible');
+                        }
+                    }
+                }
+            }
+
+            // Continuous earth rotation for visual effect (much slower)
+            if (earth) {
+                earth.rotation.y += 0.002;
+            }
+
+            solarRenderer.render(solarScene, solarCamera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (solarRenderer && solarCamera) {
+                const canvas = document.getElementById('solarSystemCanvas');
+                if (canvas) {
+                    solarCamera.aspect = canvas.clientWidth / canvas.clientHeight;
+                    solarCamera.updateProjectionMatrix();
+                    solarRenderer.setSize(canvas.clientWidth, canvas.clientHeight);
+                }
+            }
+        });
+
     </script>
 </body>
 </html> 
