@@ -1,13 +1,43 @@
 from flask import Flask, render_template, request, jsonify
 from hengefinder import search_for_henge
+import datetime
 from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
 import traceback
+from astral import Observer, sun
+
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# { "time": "2025-09-02T00:00:00Z" }
+
+    @app.route('/lookup_azimuth_altitude', methods=['POST'])
+    def lookup_azimuth_altitude():
+        """Endpoint that handles both address lookup and henge calculation"""
+        try:
+            data = request.get_json()
+            address = "251 W 42nd St, New York, NY"
+            exact_time = datetime.datetime.strptime(data.get('time'), '%Y-%m-%dT%H:%M:%SZ')
+            user_road_bearing = data.get('road_bearing')  # Optional user-provided bearing
+            lat, lon = get_coordinates(address)
+            obs = Observer(lat, lon)
+            az = sun.azimuth(obs, exact_time)
+            alt = sun.altitude(obs, exact_time)
+            
+            graphic_az = az - user_road_bearing 
+            return jsonify({
+                'graphic_az': graphic_az,
+                'altitude': alt
+            })
+            
+            
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            traceback.print_exc()
+            return jsonify({'error': 'An unexpected error occurred while processing your request. Please try again or contact support if the problem persists.'}), 500
 
 @app.route('/lookup_address', methods=['POST'])
 def lookup_address():
