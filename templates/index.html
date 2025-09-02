@@ -983,7 +983,7 @@
                 <h2>🌍 Earth's Orbital Motion and Axial Tilt</h2>
                 <p>Understanding why henges happen requires looking at Earth's motion around the Sun. These visualizations show how Earth's tilt and orbital position change throughout the year:</p>
                 
-                <div style="display: flex; gap: 20px; margin: 30px 0;">
+               <div style="display: flex; gap: 20px; margin: 30px 0;"> 
                     <!-- Orbital View Canvas -->
                     <div style="flex: 1;">
                         <h3 style="text-align: center; color: #5E4955; margin-bottom: 15px;">Earth's Orbit (Top View)</h3>
@@ -999,15 +999,15 @@
                             <canvas id="tiltCanvas" style="width: 100%; height: 300px; border-radius: 8px; display: block; background: radial-gradient(circle at center, #16213e 0%, #0f0f23 100%);"></canvas>
                         </div>
                     </div>
-                </div>
+               </div> 
                 
                 <!-- Shared Controls -->
                 <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 8px; margin-top: 20px;">
-                    <div style="color: white; font-size: 18px; font-weight: 600; margin-bottom: 10px; text-align: center;" id="orbitalTimeDisplay">Day 1 of Year (January 1)</div>
+                    <div style="color: black; font-size: 18px; font-weight: 600; margin-bottom: 10px; text-align: center;" id="orbitalTimeDisplay">Day 1 of Year (January 1)</div>
                     <div style="margin: 15px 0;">
                         <input type="range" id="orbitalTimeSlider" style="width: 100%; height: 8px; border-radius: 4px; background: #ddd; outline: none; -webkit-appearance: none;" min="0" max="365" value="0" step="1">
                     </div>
-                    <div style="display: flex; justify-content: space-between; color: white; font-size: 14px; margin-top: 5px;">
+                    <div style="display: flex; justify-content: space-between; color: black; font-size: 14px; margin-top: 5px;">
                         <span>January 1</span>
                         <span>June 21 (Summer Solstice)</span>
                         <span>December 31</span>
@@ -2388,8 +2388,12 @@
             orbitalCtx.strokeStyle = '#90EE90';
             orbitalCtx.lineWidth = 2;
             orbitalCtx.beginPath();
-            orbitalCtx.moveTo(earthX, earthY - 12);
-            orbitalCtx.lineTo(earthX, earthY + 12);
+            axisLength = 12; 
+            offsetY = axisLength * Math.cos(23.5 * Math.PI / 180); 
+            offsetX = axisLength * Math.sin(23.5 * Math.PI / 180);  
+
+            orbitalCtx.moveTo(earthX - offsetX, earthY - offsetY);
+            orbitalCtx.lineTo(earthX + offsetX, earthY + offsetY);
             orbitalCtx.stroke();
             
             // Add Earth label
@@ -2402,13 +2406,13 @@
             orbitalCtx.fillStyle = '#CCC';
             orbitalCtx.font = '14px Arial';
             orbitalCtx.textAlign = 'center';
-            orbitalCtx.fillText('Summer Solstice', centerX, centerY - 110);
-            orbitalCtx.fillText('Winter Solstice', centerX, centerY + 125);
+            orbitalCtx.fillText('Spring Equinox', centerX, centerY - 110);
+            orbitalCtx.fillText('Fall Equinox', centerX, centerY + 125);
             
             orbitalCtx.textAlign = 'left';
-            orbitalCtx.fillText('Spring Equinox', centerX + 90, centerY + 5);
+            orbitalCtx.fillText('Summer Solstice', centerX + 90, centerY + 5);
             orbitalCtx.textAlign = 'right';
-            orbitalCtx.fillText('Fall Equinox', centerX - 90, centerY + 5);
+            orbitalCtx.fillText('Winter Solstice***', centerX - 90, centerY + 5);
         }
 
         function drawTiltView() {
@@ -2459,9 +2463,9 @@
             //const tiltRadians = (tiltDegrees * Math.PI) / 180;
             
             // Draw rotational axis showing tilt
-            const axisEndX = centerX + Math.sin(seasonalAngle) * maxX;
+            const axisEndX = centerX - Math.sin(seasonalAngle) * maxX;
             const axisEndY = centerY - offsetY;
-            const axisStartX = centerX - Math.sin(seasonalAngle) * maxX;
+            const axisStartX = centerX + Math.sin(seasonalAngle) * maxX;
             const axisStartY = centerY + offsetY;
             
             tiltCtx.strokeStyle = '#90EE90';
