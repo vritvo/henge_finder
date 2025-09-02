@@ -8,36 +8,46 @@ from astral import Observer, sun
 
 app = Flask(__name__)
 
+def make_observer():
+    address = "251 W 42nd St, New York, NY"  # Fixed Manhattan address for demonstration
+    # Get coordinates for the fixed address
+    location = get_location(address)
+    lat, lon = get_coordinates(location)
+    return Observer(lat, lon)
+
+demo_observer = make_observer()
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# { "time": "2025-09-02T00:00:00Z" }
-
-    @app.route('/lookup_azimuth_altitude', methods=['POST'])
-    def lookup_azimuth_altitude():
-        """Endpoint that handles both address lookup and henge calculation"""
-        try:
-            data = request.get_json()
-            address = "251 W 42nd St, New York, NY"
-            exact_time = datetime.datetime.strptime(data.get('time'), '%Y-%m-%dT%H:%M:%SZ')
-            user_road_bearing = data.get('road_bearing')  # Optional user-provided bearing
-            lat, lon = get_coordinates(address)
-            obs = Observer(lat, lon)
-            az = sun.azimuth(obs, exact_time)
-            alt = sun.altitude(obs, exact_time)
+@app.route('/lookup_azimuth_altitude', methods=['POST'])
+def lookup_azimuth_altitude():
+    """Endpoint that handles azimuth and altitude lookup for visualization"""
+    try:
+        data = request.get_json()
+        time_str = data.get('time')
+        demo_road_bearing =299.5  # Default Manhattan bearing
+        
+        if not time_str:
+            return jsonify({'error': 'Time parameter is required'}), 400
             
-            graphic_az = az - user_road_bearing 
-            return jsonify({
-                'graphic_az': graphic_az,
-                'altitude': alt
-            })
-            
-            
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            traceback.print_exc()
-            return jsonify({'error': 'An unexpected error occurred while processing your request. Please try again or contact support if the problem persists.'}), 500
+        # Parse the time string
+        exact_time = datetime.datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+        
+        graphic_az = sun.azimuth(demo_observer, exact_time) - demo_road_bearing 
+        alt = sun.elevation(demo_observer, exact_time)
+        
+        return jsonify({
+            'graphic_az': graphic_az,
+            'altitude': alt,
+        })
+        
+    except Exception as e:
+        print(f"Unexpected error in lookup_azimuth_altitude: {e}")
+        traceback.print_exc()
+        return jsonify({'error': 'An unexpected error occurred while calculating sun position.'}), 500
 
 @app.route('/lookup_address', methods=['POST'])
 def lookup_address():
@@ -83,12 +93,12 @@ def lookup_address():
         except (ValueError, TypeError) as e:
             print(f"Error with road bearing value: {e}")
             return jsonify({
-                'error': f"Invalid road bearing value provided. Please try adjusting the arrow again."
+                'error': "Invalid road bearing value provided. Please try adjusting the arrow again."
             }), 400
         except Exception as e:
             print(f"Error getting road angle: {e}")
             return jsonify({
-                'error': f"Could not determine the street direction at this location. This might happen if the address is not near a mapped road, or if the road data is incomplete. Try using a different address on the same street."
+                'error': "Could not determine the street direction at this location. This might happen if the address is not near a mapped road, or if the road data is incomplete. Try using a different address on the same street."
             }), 400
 
         # If user provided a bearing, calculate henge; otherwise just return address info

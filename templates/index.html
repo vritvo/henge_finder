@@ -741,6 +741,89 @@
             background: #4f3d47;
         }
 
+        /* Street Henge Visualization */
+        .street-henge-container {
+            background: #87CEEB;
+            border-radius: 10px;
+            margin: 30px 0;
+            padding: 20px;
+            position: relative;
+        }
+
+        .street-henge-canvas {
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #FFE4B5 30%, #FFA07A 70%, #FF6347 100%);
+        }
+
+        .street-time-controls {
+            margin-top: 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .street-time-slider-container {
+            margin: 15px 0;
+        }
+
+        .street-time-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .street-time-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #5E4955;
+            cursor: pointer;
+        }
+
+        .street-time-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #5E4955;
+            cursor: pointer;
+            border: none;
+        }
+
+        .street-time-display {
+            color: #2A2B2A;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .street-time-labels {
+            display: flex;
+            justify-content: space-between;
+            color: #2A2B2A;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .henge-indicator {
+            color: #ffd700;
+            font-weight: bold;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .henge-indicator.visible {
+            opacity: 1;
+        }
+
     </style>
 </head>
 <body>
@@ -853,6 +936,29 @@
 
         <!-- Learn Tab Content -->
         <div class="tab-content" id="learn-tab">
+            <!-- Street Henge Visualization -->
+            <div class="education-section">
+                <h2>🏙️ See How the Sun Moves Down Your Street</h2>
+                <p>Watch how the sun's position changes throughout the day, and see why henges only happen at specific times:</p>
+                
+                <div class="street-henge-container">
+                    <canvas id="streetHengeCanvas" class="street-henge-canvas"></canvas>
+                    <div class="street-time-controls">
+                        <div class="street-time-display" id="streetTimeDisplay">6:00 PM</div>
+                        <div class="street-time-slider-container">
+                            <input type="range" id="streetTimeSlider" class="street-time-slider" min="0" max="240" value="120" step="1">
+                        </div>
+                        <div class="street-time-labels">
+                            <span>4:00 PM</span>
+                            <span>8:00 PM</span>
+                        </div>
+                        <div class="henge-indicator" id="hengeIndicator">🌅 Perfect Henge Alignment!</div>
+                    </div>
+                </div>
+                
+                <p style="margin-top: 20px;"><em>This shows a typical Manhattan street (299° bearing). Notice how the sun only aligns perfectly with the street at specific times!</em></p>
+            </div>
+
             <div class="education-section">
                 <h2>🌅 Why Do Henges Happen So Rarely?</h2>
                 <p>You might think that henges would happen all the time for any east-west street, but they're actually quite rare! Here's why:</p>
@@ -1819,6 +1925,283 @@
                 }
             }
         });
+
+        // Street Henge Visualization
+        let streetCanvas, streetCtx;
+        let currentTimeMinutes = 120; // Start at 6:00 PM (4PM + 120 minutes)
+        const MANHATTAN_BEARING = 299; // Manhattan street bearing
+        let streetAnimationInitialized = false;
+
+        function initStreetVisualization() {
+            streetCanvas = document.getElementById('streetHengeCanvas');
+            if (!streetCanvas) return;
+            
+            streetCtx = streetCanvas.getContext('2d');
+            streetCanvas.width = streetCanvas.clientWidth;
+            streetCanvas.height = streetCanvas.clientHeight;
+            
+            setupStreetControls();
+            updateStreetScene();
+            streetAnimationInitialized = true;
+        }
+
+        function setupStreetControls() {
+            const timeSlider = document.getElementById('streetTimeSlider');
+            const timeDisplay = document.getElementById('streetTimeDisplay');
+            
+            if (!timeSlider || !timeDisplay) return;
+            
+            timeSlider.addEventListener('input', (e) => {
+                currentTimeMinutes = parseInt(e.target.value);
+                updateTimeDisplay();
+                updateStreetScene();
+            });
+            
+            updateTimeDisplay();
+        }
+
+        function updateTimeDisplay() {
+            const timeDisplay = document.getElementById('streetTimeDisplay');
+            if (!timeDisplay) return;
+            
+            // Convert minutes since 4 PM to actual time
+            const startHour = 16; // 4 PM
+            const totalMinutes = currentTimeMinutes;
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            const actualHour = startHour + hours;
+            
+            const displayHour = actualHour > 12 ? actualHour - 12 : actualHour;
+            const ampm = actualHour >= 12 ? 'PM' : 'AM';
+            const timeString = `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            
+            timeDisplay.textContent = timeString;
+        }
+
+        function updateStreetScene() {
+            if (!streetCtx || !streetCanvas) return;
+            
+            // Get current time for API call
+            const now = new Date();
+            const startHour = 16; // 4 PM
+            const hours = Math.floor(currentTimeMinutes / 60);
+            const minutes = currentTimeMinutes % 60;
+            const targetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour + hours, minutes);
+            
+            // Call API to get sun position
+            fetch('/lookup_azimuth_altitude', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    time: targetTime.toISOString(),
+                    road_bearing: MANHATTAN_BEARING
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                drawStreetScene(data.graphic_az, data.altitude);
+            })
+            .catch(error => {
+                console.error('Error fetching sun position:', error);
+                // Draw scene with default values if API fails
+                drawStreetScene(0, 5);
+            });
+        }
+
+        function drawStreetScene(graphicAz, altitude) {
+            if (!streetCtx || !streetCanvas) return;
+            
+            const width = streetCanvas.width;
+            const height = streetCanvas.height;
+            
+            // Clear canvas
+            streetCtx.clearRect(0, 0, width, height);
+            
+            // Draw sky gradient
+            const gradient = streetCtx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#87CEEB'); // Sky blue
+            gradient.addColorStop(0.3, '#FFE4B5'); // Moccasin
+            gradient.addColorStop(0.7, '#FFA07A'); // Light salmon
+            gradient.addColorStop(1, '#FF6347'); // Tomato
+            
+            streetCtx.fillStyle = gradient;
+            streetCtx.fillRect(0, 0, width, height);
+            
+            // Draw street (perspective view)
+            const streetWidth = width * 0.8;
+            const streetStartY = height * 0.8;
+            const vanishingPointX = width / 2;
+            const vanishingPointY = height * 0.4;
+            
+            // Street surface
+            streetCtx.fillStyle = '#666';
+            streetCtx.beginPath();
+            streetCtx.moveTo((width - streetWidth) / 2, streetStartY);
+            streetCtx.lineTo((width + streetWidth) / 2, streetStartY);
+            streetCtx.lineTo(vanishingPointX + 20, vanishingPointY);
+            streetCtx.lineTo(vanishingPointX - 20, vanishingPointY);
+            streetCtx.closePath();
+            streetCtx.fill();
+            
+            // Draw buildings on both sides
+            drawBuildings(width, height, vanishingPointX, vanishingPointY, streetWidth, streetStartY);
+            
+            // Draw sun
+            drawSun(graphicAz, altitude, width, height, vanishingPointX, vanishingPointY);
+            
+            // Check if it's a henge (sun aligned with street)
+            const hengeIndicator = document.getElementById('hengeIndicator');
+            if (hengeIndicator) {
+                if (Math.abs(graphicAz) < 5 && altitude > 0) { // Close to alignment
+                    hengeIndicator.classList.add('visible');
+                } else {
+                    hengeIndicator.classList.remove('visible');
+                }
+            }
+        }
+
+        function drawBuildings(width, height, vanishingPointX, vanishingPointY, streetWidth, streetStartY) {
+            const buildingColor = '#444';
+            const windowColor = '#FFD700';
+            
+            // Left side buildings
+            for (let i = 0; i < 4; i++) {
+                const buildingStartX = (width - streetWidth) / 2 - 50 - i * 20;
+                const buildingEndX = buildingStartX - 60 + i * 10;
+                const buildingHeight = 100 + i * 20;
+                
+                // Building face
+                streetCtx.fillStyle = buildingColor;
+                streetCtx.beginPath();
+                streetCtx.moveTo(buildingStartX, streetStartY);
+                streetCtx.lineTo(buildingStartX, streetStartY - buildingHeight);
+                streetCtx.lineTo(vanishingPointX - 40 - i * 15, vanishingPointY - buildingHeight * 0.3);
+                streetCtx.lineTo(vanishingPointX - 40 - i * 15, vanishingPointY);
+                streetCtx.closePath();
+                streetCtx.fill();
+                
+                // Side face
+                streetCtx.fillStyle = '#333';
+                streetCtx.beginPath();
+                streetCtx.moveTo(buildingStartX, streetStartY - buildingHeight);
+                streetCtx.lineTo(buildingEndX, streetStartY - buildingHeight);
+                streetCtx.lineTo(vanishingPointX - 50 - i * 15, vanishingPointY - buildingHeight * 0.3);
+                streetCtx.lineTo(vanishingPointX - 40 - i * 15, vanishingPointY - buildingHeight * 0.3);
+                streetCtx.closePath();
+                streetCtx.fill();
+                
+                // Windows
+                drawBuildingWindows(buildingStartX - 10, streetStartY - buildingHeight + 20, 3, 4, windowColor);
+            }
+            
+            // Right side buildings
+            for (let i = 0; i < 4; i++) {
+                const buildingStartX = (width + streetWidth) / 2 + 50 + i * 20;
+                const buildingEndX = buildingStartX + 60 - i * 10;
+                const buildingHeight = 100 + i * 20;
+                
+                // Building face
+                streetCtx.fillStyle = buildingColor;
+                streetCtx.beginPath();
+                streetCtx.moveTo(buildingStartX, streetStartY);
+                streetCtx.lineTo(buildingStartX, streetStartY - buildingHeight);
+                streetCtx.lineTo(vanishingPointX + 40 + i * 15, vanishingPointY - buildingHeight * 0.3);
+                streetCtx.lineTo(vanishingPointX + 40 + i * 15, vanishingPointY);
+                streetCtx.closePath();
+                streetCtx.fill();
+                
+                // Side face
+                streetCtx.fillStyle = '#333';
+                streetCtx.beginPath();
+                streetCtx.moveTo(buildingStartX, streetStartY - buildingHeight);
+                streetCtx.lineTo(buildingEndX, streetStartY - buildingHeight);
+                streetCtx.lineTo(vanishingPointX + 50 + i * 15, vanishingPointY - buildingHeight * 0.3);
+                streetCtx.lineTo(vanishingPointX + 40 + i * 15, vanishingPointY - buildingHeight * 0.3);
+                streetCtx.closePath();
+                streetCtx.fill();
+                
+                // Windows
+                drawBuildingWindows(buildingStartX + 10, streetStartY - buildingHeight + 20, 3, 4, windowColor);
+            }
+        }
+
+        function drawBuildingWindows(x, y, rows, cols, color) {
+            streetCtx.fillStyle = color;
+            const windowWidth = 8;
+            const windowHeight = 12;
+            const spacingX = 15;
+            const spacingY = 20;
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    streetCtx.fillRect(
+                        x + col * spacingX,
+                        y + row * spacingY,
+                        windowWidth,
+                        windowHeight
+                    );
+                }
+            }
+        }
+
+        function drawSun(graphicAz, altitude, width, height, vanishingPointX, vanishingPointY) {
+            if (altitude <= 0) return; // Sun is below horizon
+            
+            // Convert graphic azimuth to screen position
+            // graphicAz = 0 means perfectly aligned with street
+            // Negative values = sun is to the left, positive = to the right
+            const sunX = vanishingPointX + (graphicAz * 3); // Scale the azimuth for visual effect
+            const sunY = vanishingPointY - (altitude * 8); // Higher altitude = higher on screen
+            
+            // Ensure sun stays within reasonable bounds
+            const clampedSunX = Math.max(50, Math.min(width - 50, sunX));
+            const clampedSunY = Math.max(50, Math.min(height * 0.8, sunY));
+            
+            // Draw sun
+            const sunRadius = 25;
+            const sunGradient = streetCtx.createRadialGradient(clampedSunX, clampedSunY, 0, clampedSunX, clampedSunY, sunRadius);
+            sunGradient.addColorStop(0, '#FFF');
+            sunGradient.addColorStop(0.3, '#FFFF99');
+            sunGradient.addColorStop(1, '#FFD700');
+            
+            streetCtx.fillStyle = sunGradient;
+            streetCtx.beginPath();
+            streetCtx.arc(clampedSunX, clampedSunY, sunRadius, 0, Math.PI * 2);
+            streetCtx.fill();
+            
+            // Draw sun rays
+            streetCtx.strokeStyle = '#FFFF99';
+            streetCtx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI * 2) / 8;
+                const rayLength = 15;
+                streetCtx.beginPath();
+                streetCtx.moveTo(
+                    clampedSunX + Math.cos(angle) * (sunRadius + 5),
+                    clampedSunY + Math.sin(angle) * (sunRadius + 5)
+                );
+                streetCtx.lineTo(
+                    clampedSunX + Math.cos(angle) * (sunRadius + rayLength),
+                    clampedSunY + Math.sin(angle) * (sunRadius + rayLength)
+                );
+                streetCtx.stroke();
+            }
+        }
+
+        // Update the showTab function to initialize street visualization
+        const originalShowTab = showTab;
+        showTab = function(tabName) {
+            originalShowTab.call(this, tabName);
+            
+            // Initialize street visualization if switching to learn tab
+            if (tabName === 'learn' && !streetAnimationInitialized) {
+                setTimeout(() => {
+                    initStreetVisualization();
+                }, 100); // Small delay to ensure canvas is rendered
+            }
+        };
 
     </script>
 </body>
