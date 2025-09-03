@@ -101,7 +101,6 @@ def get_road_bearing(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="drive"):
     Return the street‐bearing (degrees clockwise from North) at the given address
     by finding the nearest OSMnx edge and calculating bearing.
     """
-    # TODO: This works for many streets, but is not always reliable (curb, intersection, etc)
 
     # get a network around the point
     # we use truncate_by_edge=True to make sure we get all edges within the distance
