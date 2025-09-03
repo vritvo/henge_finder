@@ -967,9 +967,9 @@
                         <div class="street-henge-container">
                             <canvas id="streetNonHengeCanvas" class="street-henge-canvas"></canvas>
                             <div class="street-time-controls">
-                                <div class="street-time-display" id="streetNonHengeTimeDisplay">6:15 PM</div>
+                                <div class="street-time-display" id="streetNonHengeTimeDisplay">7:00 PM</div>
                                 <div class="street-time-slider-container">
-                                    <input type="range" id="streetNonHengeTimeSlider" class="street-time-slider" min="90" max="180" value="135" step="1">
+                                    <input type="range" id="streetNonHengeTimeSlider" class="street-time-slider" min="90" max="180" value="180" step="1">
                                 </div>
                                 <div class="street-time-labels">
                                     <span>5:30 PM</span>
@@ -986,9 +986,9 @@
                         <div class="street-henge-container">
                             <canvas id="streetHengeCanvas" class="street-henge-canvas"></canvas>
                             <div class="street-time-controls">
-                                <div class="street-time-display" id="streetTimeDisplay">7:30 PM</div>
+                                <div class="street-time-display" id="streetTimeDisplay">8:15 PM</div>
                                 <div class="street-time-slider-container">
-                                    <input type="range" id="streetTimeSlider" class="street-time-slider" min="165" max="255" value="210" step="1">
+                                    <input type="range" id="streetTimeSlider" class="street-time-slider" min="165" max="255" value="255" step="1">
                                 </div>
                                 <div class="street-time-labels">
                                     <span>6:45 PM</span>
@@ -2012,8 +2012,8 @@
 
         // Street Henge Visualization
         let streetCanvas, streetCtx, streetNonHengeCanvas, streetNonHengeCtx;
-        let currentTimeMinutes = 210; // Start at 7:30 PM (4PM + 210 minutes) for henge view
-        let currentNonHengeTimeMinutes = 135; // Start at 6:15 PM for non-henge view
+        let currentTimeMinutes = 255; // Start at 8:15 PM (4PM + 255 minutes) for henge view
+        let currentNonHengeTimeMinutes = 180; // Start at 7:00 PM for non-henge view
         const MANHATTAN_BEARING = 299; // Manhattan street bearing
         let streetAnimationInitialized = false;
 
