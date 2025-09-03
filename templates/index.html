@@ -2085,18 +2085,17 @@
             
             // Draw sky gradient (only above horizon)
             const skyGradient = streetCtx.createLinearGradient(0, 0, 0, horizonY);
-            skyGradient.addColorStop(0, '#87CEEB'); // Sky blue
-            skyGradient.addColorStop(0.4, '#FFE4B5'); // Moccasin
-            skyGradient.addColorStop(0.8, '#FFA07A'); // Light salmon
-            skyGradient.addColorStop(1, '#FF6347'); // Tomato
+            skyGradient.addColorStop(0, '#E6F3FF'); // Very light blue
+            skyGradient.addColorStop(0.5, '#FFE6CC'); // Very light peach
+            skyGradient.addColorStop(1, '#FFD6B3'); // Light warm beige
             
             streetCtx.fillStyle = skyGradient;
             streetCtx.fillRect(0, 0, width, horizonY);
             
-            // Draw ground/landscape below horizon
+            // Draw ground/landscape below horizon using variations of #5E4955
             const groundGradient = streetCtx.createLinearGradient(0, horizonY, 0, height);
-            groundGradient.addColorStop(0, '#8B7355'); // Light brown
-            groundGradient.addColorStop(1, '#654321'); // Dark brown
+            groundGradient.addColorStop(0, '#7A5F73'); // Lighter version of #5E4955
+            groundGradient.addColorStop(1, '#5E4955'); // Original color
             
             streetCtx.fillStyle = groundGradient;
             streetCtx.fillRect(0, horizonY, width, height - horizonY);
@@ -2167,27 +2166,30 @@
             const clampedSunY = Math.max(50, Math.min(height * 0.8, sunY));
             
             // Draw sun
-            const sunRadius = 25;
+            const sunRadius = 18; // Smaller sun
             const sunGradient = streetCtx.createRadialGradient(clampedSunX, clampedSunY, 0, clampedSunX, clampedSunY, sunRadius);
-            sunGradient.addColorStop(0, '#FFF');
-            sunGradient.addColorStop(0.3, '#FFFF99');
-            sunGradient.addColorStop(1, '#FFD700');
+            sunGradient.addColorStop(0, '#FFFFFF'); // Bright white center
+            sunGradient.addColorStop(0.3, '#DC816E'); // DC816E
+            sunGradient.addColorStop(0.7, '#DC816E'); // DC816E
+            sunGradient.addColorStop(1, '#DC816E'); // DC816E edge
             
             streetCtx.fillStyle = sunGradient;
             streetCtx.beginPath();
             streetCtx.arc(clampedSunX, clampedSunY, sunRadius, 0, Math.PI * 2);
             streetCtx.fill();
             
-            // Draw sun rays
-            streetCtx.strokeStyle = '#FFFF99';
-            streetCtx.lineWidth = 2;
+            // Draw sun rays (brighter and more prominent)
+            streetCtx.strokeStyle = '#DC816E'; // DC816E rays
+            streetCtx.lineWidth = 3; // Thicker rays
+            streetCtx.shadowColor = '#DC816E';
+            streetCtx.shadowBlur = 5;
             for (let i = 0; i < 8; i++) {
                 const angle = (i * Math.PI * 2) / 8;
-                const rayLength = 15;
+                const rayLength = 15; // Longer rays for better visibility
                 streetCtx.beginPath();
                 streetCtx.moveTo(
-                    clampedSunX + Math.cos(angle) * (sunRadius + 5),
-                    clampedSunY + Math.sin(angle) * (sunRadius + 5)
+                    clampedSunX + Math.cos(angle) * (sunRadius + 3),
+                    clampedSunY + Math.sin(angle) * (sunRadius + 3)
                 );
                 streetCtx.lineTo(
                     clampedSunX + Math.cos(angle) * (sunRadius + rayLength),
@@ -2195,6 +2197,9 @@
                 );
                 streetCtx.stroke();
             }
+            // Reset shadow
+            streetCtx.shadowColor = 'transparent';
+            streetCtx.shadowBlur = 0;
         }
 
         // Orbital Visualization Variables
