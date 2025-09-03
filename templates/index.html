@@ -1003,14 +1003,14 @@
                 
                 <!-- Shared Controls -->
                 <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 8px; margin-top: 20px;">
-                    <div style="color: black; font-size: 18px; font-weight: 600; margin-bottom: 10px; text-align: center;" id="orbitalTimeDisplay">Day 1 of Year (January 1)</div>
+                    <div style="color: black; font-size: 18px; font-weight: 600; margin-bottom: 10px; text-align: center;" id="orbitalTimeDisplay">Day 1</div>
                     <div style="margin: 15px 0;">
                         <input type="range" id="orbitalTimeSlider" style="width: 100%; height: 8px; border-radius: 4px; background: #ddd; outline: none; -webkit-appearance: none;" min="0" max="365" value="0" step="1">
                     </div>
                     <div style="display: flex; justify-content: space-between; color: black; font-size: 14px; margin-top: 5px;">
-                        <span>January 1</span>
-                        <span>June 21 (Summer Solstice)</span>
-                        <span>December 31</span>
+                        <span>Day 1</span>
+                        <span>Day Slider</span>
+                        <span>Day 365</span>
                     </div>
                     <div style="color: #ffd700; font-weight: bold; margin-top: 10px; opacity: 0; transition: opacity 0.3s; text-align: center;" id="orbitalEquinoxIndicator">🌅 Equinox - Sun sets due west!</div>
                 </div>
@@ -2295,25 +2295,7 @@
             const equinoxIndicator = document.getElementById('orbitalEquinoxIndicator');
             if (!timeDisplay) return;
             
-            // Calculate month and day
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
-            const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-            
-            let remainingDays = orbitalCurrentDay;
-            let month = 0;
-            let day = 1;
-            
-            for (let i = 0; i < 12; i++) {
-                if (remainingDays < daysInMonth[i]) {
-                    month = i;
-                    day = remainingDays + 1;
-                    break;
-                }
-                remainingDays -= daysInMonth[i];
-            }
-            
-            timeDisplay.textContent = `Day ${orbitalCurrentDay + 1} of Year (${monthNames[month]} ${day})`;
+            timeDisplay.textContent = `Day ${orbitalCurrentDay + 1}`;
             
             // Check for equinoxes and solstices
             if (equinoxIndicator) {
@@ -2404,15 +2386,26 @@
             
             // Add directional labels
             orbitalCtx.fillStyle = '#CCC';
-            orbitalCtx.font = '14px Arial';
+            orbitalCtx.font = '12px Arial';
             orbitalCtx.textAlign = 'center';
-            orbitalCtx.fillText('Spring Equinox', centerX, centerY - 110);
-            orbitalCtx.fillText('Fall Equinox', centerX, centerY + 125);
             
+            // Spring Equinox (top)
+            orbitalCtx.fillText('Spring', centerX, centerY - 115);
+            orbitalCtx.fillText('Equinox', centerX, centerY - 102);
+            
+            // Fall Equinox (bottom)
+            orbitalCtx.fillText('Fall', centerX, centerY + 125);
+            orbitalCtx.fillText('Equinox', centerX, centerY + 138);
+            
+            // Summer Solstice (right)
             orbitalCtx.textAlign = 'left';
-            orbitalCtx.fillText('Summer Solstice', centerX + 90, centerY + 5);
+            orbitalCtx.fillText('Summer', centerX + 90, centerY - 5);
+            orbitalCtx.fillText('Solstice', centerX + 90, centerY + 8);
+            
+            // Winter Solstice (left)
             orbitalCtx.textAlign = 'right';
-            orbitalCtx.fillText('Winter Solstice***', centerX - 90, centerY + 5);
+            orbitalCtx.fillText('Winter', centerX - 90, centerY - 5);
+            orbitalCtx.fillText('Solstice', centerX - 90, centerY + 8);
         }
 
         function drawTiltView() {
@@ -2420,7 +2413,7 @@
             
             const width = tiltCanvas.width;
             const height = tiltCanvas.height;
-            const centerX = width / 2;
+            const centerX = width * 0.7; // Move Earth to the right (70% across)
             const centerY = height / 2;
             
             // Clear canvas
@@ -2476,7 +2469,7 @@
             tiltCtx.stroke();
             
             // Draw North Pole marker
-            tiltCtx.fillStyle = '#FF6B6B';
+            tiltCtx.fillStyle = '#FFF';
             tiltCtx.beginPath();
             tiltCtx.arc(axisEndX, axisEndY, 5, 0, Math.PI * 2);
             tiltCtx.fill();
@@ -2488,7 +2481,7 @@
             tiltCtx.fillText('North Pole', axisEndX, axisEndY - 15);
             
             // Draw South Pole marker
-            tiltCtx.fillStyle = '#6B6BFF';
+            tiltCtx.fillStyle = '#FFF';
             tiltCtx.beginPath();
             tiltCtx.arc(axisStartX, axisStartY, 5, 0, Math.PI * 2);
             tiltCtx.fill();
@@ -2497,6 +2490,7 @@
             tiltCtx.fillText('South Pole', axisStartX, axisStartY + 25);
             
             // Add Earth label
+            tiltCtx.fillStyle = '#FFF';
             tiltCtx.fillText('Earth', centerX, centerY + 45);
             
             // Show tilt angle
