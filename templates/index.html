@@ -2078,34 +2078,66 @@
             // Clear canvas
             streetCtx.clearRect(0, 0, width, height);
             
-            // Draw sky gradient
-            const gradient = streetCtx.createLinearGradient(0, 0, 0, height);
-            gradient.addColorStop(0, '#87CEEB'); // Sky blue
-            gradient.addColorStop(0.3, '#FFE4B5'); // Moccasin
-            gradient.addColorStop(0.7, '#FFA07A'); // Light salmon
-            gradient.addColorStop(1, '#FF6347'); // Tomato
-            
-            streetCtx.fillStyle = gradient;
-            streetCtx.fillRect(0, 0, width, height);
-            
-            // Draw street (perspective view)
-            const streetWidth = width * 0.8;
-            const streetStartY = height * 0.8;
+            // Define perspective parameters
             const vanishingPointX = width / 2;
             const vanishingPointY = height * 0.4;
+            const horizonY = vanishingPointY;
+            
+            // Draw sky gradient (only above horizon)
+            const skyGradient = streetCtx.createLinearGradient(0, 0, 0, horizonY);
+            skyGradient.addColorStop(0, '#87CEEB'); // Sky blue
+            skyGradient.addColorStop(0.4, '#FFE4B5'); // Moccasin
+            skyGradient.addColorStop(0.8, '#FFA07A'); // Light salmon
+            skyGradient.addColorStop(1, '#FF6347'); // Tomato
+            
+            streetCtx.fillStyle = skyGradient;
+            streetCtx.fillRect(0, 0, width, horizonY);
+            
+            // Draw ground/landscape below horizon
+            const groundGradient = streetCtx.createLinearGradient(0, horizonY, 0, height);
+            groundGradient.addColorStop(0, '#8B7355'); // Light brown
+            groundGradient.addColorStop(1, '#654321'); // Dark brown
+            
+            streetCtx.fillStyle = groundGradient;
+            streetCtx.fillRect(0, horizonY, width, height - horizonY);
+            
+            // Draw street (perspective view) - extends to bottom of canvas
+            const streetWidthBottom = width * 0.6;
+            const streetWidthTop = 20; // Width at vanishing point
             
             // Street surface
-            streetCtx.fillStyle = '#666';
+            streetCtx.fillStyle = '#444';
             streetCtx.beginPath();
-            streetCtx.moveTo((width - streetWidth) / 2, streetStartY);
-            streetCtx.lineTo((width + streetWidth) / 2, streetStartY);
-            streetCtx.lineTo(vanishingPointX + 20, vanishingPointY);
-            streetCtx.lineTo(vanishingPointX - 20, vanishingPointY);
+            streetCtx.moveTo((width - streetWidthBottom) / 2, height);
+            streetCtx.lineTo((width + streetWidthBottom) / 2, height);
+            streetCtx.lineTo(vanishingPointX + streetWidthTop / 2, vanishingPointY);
+            streetCtx.lineTo(vanishingPointX - streetWidthTop / 2, vanishingPointY);
             streetCtx.closePath();
             streetCtx.fill();
             
-            // Draw buildings on both sides
-            drawBuildings(width, height, vanishingPointX, vanishingPointY, streetWidth, streetStartY);
+            // Draw center line on street
+            streetCtx.strokeStyle = '#FFFF99';
+            streetCtx.lineWidth = 3;
+            streetCtx.setLineDash([10, 5]);
+            streetCtx.beginPath();
+            streetCtx.moveTo(width / 2, height);
+            streetCtx.lineTo(vanishingPointX, vanishingPointY);
+            streetCtx.stroke();
+            streetCtx.setLineDash([]);
+            
+            // Draw street edge lines
+            streetCtx.strokeStyle = '#666';
+            streetCtx.lineWidth = 2;
+            streetCtx.beginPath();
+            // Left edge
+            streetCtx.moveTo((width - streetWidthBottom) / 2, height);
+            streetCtx.lineTo(vanishingPointX - streetWidthTop / 2, vanishingPointY);
+            streetCtx.stroke();
+            // Right edge
+            streetCtx.beginPath();
+            streetCtx.moveTo((width + streetWidthBottom) / 2, height);
+            streetCtx.lineTo(vanishingPointX + streetWidthTop / 2, vanishingPointY);
+            streetCtx.stroke();
             
             // Draw sun
             drawSun(graphicAz, altitude, width, height, vanishingPointX, vanishingPointY);
@@ -2117,90 +2149,6 @@
                     hengeIndicator.classList.add('visible');
                 } else {
                     hengeIndicator.classList.remove('visible');
-                }
-            }
-        }
-
-        function drawBuildings(width, height, vanishingPointX, vanishingPointY, streetWidth, streetStartY) {
-            const buildingColor = '#444';
-            const windowColor = '#FFD700';
-            
-            // Left side buildings
-            for (let i = 0; i < 4; i++) {
-                const buildingStartX = (width - streetWidth) / 2 - 50 - i * 20;
-                const buildingEndX = buildingStartX - 60 + i * 10;
-                const buildingHeight = 100 + i * 20;
-                
-                // Building face
-                streetCtx.fillStyle = buildingColor;
-                streetCtx.beginPath();
-                streetCtx.moveTo(buildingStartX, streetStartY);
-                streetCtx.lineTo(buildingStartX, streetStartY - buildingHeight);
-                streetCtx.lineTo(vanishingPointX - 40 - i * 15, vanishingPointY - buildingHeight * 0.3);
-                streetCtx.lineTo(vanishingPointX - 40 - i * 15, vanishingPointY);
-                streetCtx.closePath();
-                streetCtx.fill();
-                
-                // Side face
-                streetCtx.fillStyle = '#333';
-                streetCtx.beginPath();
-                streetCtx.moveTo(buildingStartX, streetStartY - buildingHeight);
-                streetCtx.lineTo(buildingEndX, streetStartY - buildingHeight);
-                streetCtx.lineTo(vanishingPointX - 50 - i * 15, vanishingPointY - buildingHeight * 0.3);
-                streetCtx.lineTo(vanishingPointX - 40 - i * 15, vanishingPointY - buildingHeight * 0.3);
-                streetCtx.closePath();
-                streetCtx.fill();
-                
-                // Windows
-                drawBuildingWindows(buildingStartX - 10, streetStartY - buildingHeight + 20, 3, 4, windowColor);
-            }
-            
-            // Right side buildings
-            for (let i = 0; i < 4; i++) {
-                const buildingStartX = (width + streetWidth) / 2 + 50 + i * 20;
-                const buildingEndX = buildingStartX + 60 - i * 10;
-                const buildingHeight = 100 + i * 20;
-                
-                // Building face
-                streetCtx.fillStyle = buildingColor;
-                streetCtx.beginPath();
-                streetCtx.moveTo(buildingStartX, streetStartY);
-                streetCtx.lineTo(buildingStartX, streetStartY - buildingHeight);
-                streetCtx.lineTo(vanishingPointX + 40 + i * 15, vanishingPointY - buildingHeight * 0.3);
-                streetCtx.lineTo(vanishingPointX + 40 + i * 15, vanishingPointY);
-                streetCtx.closePath();
-                streetCtx.fill();
-                
-                // Side face
-                streetCtx.fillStyle = '#333';
-                streetCtx.beginPath();
-                streetCtx.moveTo(buildingStartX, streetStartY - buildingHeight);
-                streetCtx.lineTo(buildingEndX, streetStartY - buildingHeight);
-                streetCtx.lineTo(vanishingPointX + 50 + i * 15, vanishingPointY - buildingHeight * 0.3);
-                streetCtx.lineTo(vanishingPointX + 40 + i * 15, vanishingPointY - buildingHeight * 0.3);
-                streetCtx.closePath();
-                streetCtx.fill();
-                
-                // Windows
-                drawBuildingWindows(buildingStartX + 10, streetStartY - buildingHeight + 20, 3, 4, windowColor);
-            }
-        }
-
-        function drawBuildingWindows(x, y, rows, cols, color) {
-            streetCtx.fillStyle = color;
-            const windowWidth = 8;
-            const windowHeight = 12;
-            const spacingX = 15;
-            const spacingY = 20;
-            
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    streetCtx.fillRect(
-                        x + col * spacingX,
-                        y + row * spacingY,
-                        windowWidth,
-                        windowHeight
-                    );
                 }
             }
         }
