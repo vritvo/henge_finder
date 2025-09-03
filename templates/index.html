@@ -23,7 +23,7 @@
         <!-- Tab Navigation -->
         <div class="tab-navigation">
             <button class="tab-button active" onclick="showTab('finder')">Find a Henge</button>
-            <button class="tab-button" onclick="showTab('learn')">How It Works</button>
+            <button class="tab-button" onclick="showTab('learn')">How Do Henges Work?</button>
         </div>
 
         <!-- Finder Tab Content -->
@@ -36,6 +36,7 @@
                     <div style="display: flex; align-items: flex-start; gap: 20px; margin-top: 15px;">
                         <div style="flex: 1;">
                             <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 15px;">A 'henge' is when the sun sets perfectly in line with your street, creating a dramatic view — like <a href="https://en.wikipedia.org/wiki/Manhattanhenge" target="_blank" style="color: #996888; text-decoration: none;">Manhattanhenge</a> in New York.</p>
+                            <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 15px;">You can find out more information by clicking the "<b>How Do Henges Work?</b>" tab.</p>
                             <p style="color: #2A2B2A; line-height: 1.6; margin-bottom: 0;">Use this tool to find when the next henge will happen for your street.</p>
                         </div>
                         <div style="flex-shrink: 0; max-width: 300px;">
@@ -121,9 +122,10 @@
         <div class="tab-content" id="learn-tab">
             <!-- Street Henge Visualization -->
             <div class="education-section">
-                <h2>🏙️ See How the Sun Moves Down Your Street</h2>
-                <p>Compare two different dates to see why henges only happen at specific times of year:</p>
-                
+                <h2>See How the Sun Moves Down The Street</h2>
+                <p>The Sun doesn’t set in the same place every day. Its position along the horizon shifts as the seasons change.</p>
+                <p>Most evenings, that angle doesn’t match the direction of a street. But on just a few days each year (if the street is angled correctly), the Sun’s path lines up perfectly—creating a “henge.”</p>
+                <p><b>Compare below to see the sun's path on a henge and non-henge date:</b></p>
                 <div style="display: flex; gap: 20px; margin: 30px 0;">
                     <!-- Non-Henge Date View (Left) -->
                     <div style="flex: 1;">
@@ -163,16 +165,16 @@
                         </div>
                     </div>
                 </div>
-                
-                <p style="margin-top: 20px;"><em>Both views show a typical Manhattan street (299° bearing). The left view shows a non-henge date where the sun sets at the wrong angle, while the right view shows a henge date where the sun aligns perfectly with the street!</em></p>
             </div>
 
             <!-- Orbital Mechanics Visualization -->
             <div class="education-section">
-                <h2>🌍 Earth's Orbital Motion and Axial Tilt</h2>
-                <p>Understanding why henges happen requires looking at Earth's motion around the Sun. These visualizations show how Earth's tilt and orbital position change throughout the year:</p>
-                
-               <div style="display: flex; gap: 20px; margin: 30px 0;"> 
+                <h2>Earth's Orbital Motion and Axial Tilt</h2>
+                <p>Earth doesn’t spin upright. It’s tilted on an axis of ~23.5˚. That tilt is what makes the seasons, and it’s also what makes henges possible.</p>
+                <p>As the tilted Earth circles the Sun, the angle of the sunset shifts across the horizon. A street keeps the same direction year-round, but the Sun only lines up on specific dates. Here, a road running along the equator lines up with the Sun at the equinox.</p>
+                <p><b>Move the slider to see how the Earth's tilt changes relative to the Sun throughout the year:</b></p>
+
+                <div style="display: flex; gap: 20px; margin: 30px 0;"> 
                     <!-- Orbital View Canvas -->
                     <div style="flex: 1;">
                         <h3 style="text-align: center; color: #5E4955; margin-bottom: 15px;">Earth's Orbit (Top View)</h3>
@@ -189,8 +191,8 @@
                         </div>
                         <!-- Henge Message Display -->
                         <div id="hengeMessage" style="margin-top: 15px; padding: 10px; background: rgba(255, 179, 71, 0.1); border-radius: 8px; border-left: 4px solid #FFB347; opacity: 0; transition: opacity 0.3s; text-align: center;">
-                            <div style="color: #FFB347; font-weight: bold; font-size: 14px;">🌅 Sun azimuth at sunset matches road running down equator!</div>
-                            <div style="color: #FFB347; font-weight: bold; font-size: 16px; margin-top: 5px;">Henge date!</div>
+                            <div style="color: #FFB347; font-weight: bold; font-size: 14px;">Sun azimuth at sunset matches road running down equator</div>
+                            <div style="color: #FFB347; font-weight: bold; font-size: 16px; margin-top: 5px;">🌅 Perfect Henge Alignment!</div>
                         </div>
                     </div>
                </div> 
@@ -208,8 +210,6 @@
                     </div>
                     <div style="color: #ffd700; font-weight: bold; margin-top: 10px; opacity: 0; transition: opacity 0.3s; text-align: center;" id="orbitalEquinoxIndicator">🌅 Equinox - Sun sets due west!</div>
                 </div>
-                
-                <p style="margin-top: 20px;"><em>The orbital view shows Earth's position around the Sun throughout the year. The tilt view shows how the North Pole's orientation relative to the Sun changes, affecting where the Sun appears to set.</em></p>
             </div>
         </div>
     </div>
