@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -601,165 +600,6 @@
             margin-bottom: 8px;
         }
 
-        .degree-highlight {
-            background: #fff3cd;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-            color: #856404;
-        }
-
-        .example-box {
-            background: #e7f7f0;
-            border: 1px solid #b0e0d3;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .example-box h4 {
-            color: #5E4955;
-            margin-bottom: 10px;
-            font-size: 1.1em;
-        }
-
-        .example-box p {
-            margin-bottom: 10px;
-        }
-
-        .example-box:last-child {
-            margin-bottom: 0;
-        }
-
-        .key-concept {
-            background: #fff;
-            border: 2px solid #5E4955;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .key-concept h3 {
-            color: #5E4955;
-            margin-bottom: 10px;
-        }
-
-        .key-concept p {
-            margin: 0;
-            font-size: 1.1em;
-            font-weight: 500;
-        }
-
-        /* Solar System Visualization */
-        .solar-system-container {
-            background: #1a1a2e;
-            border-radius: 10px;
-            margin: 30px 0;
-            padding: 20px;
-            position: relative;
-        }
-
-        .solar-system-canvas {
-            width: 100%;
-            height: 400px;
-            border-radius: 8px;
-            display: block;
-            background: radial-gradient(circle at center, #16213e 0%, #0f0f23 100%);
-        }
-
-        .time-controls {
-            margin-top: 20px;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .time-slider-container {
-            margin: 15px 0;
-        }
-
-        .time-slider {
-            width: 100%;
-            height: 8px;
-            border-radius: 4px;
-            background: #ddd;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .time-slider::-webkit-slider-thumb {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #5E4955;
-            cursor: pointer;
-        }
-
-        .time-slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #5E4955;
-            cursor: pointer;
-            border: none;
-        }
-
-        /* Orbital visualization slider styles */
-        #orbitalTimeSlider::-webkit-slider-thumb {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #5E4955;
-            cursor: pointer;
-        }
-
-        #orbitalTimeSlider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #5E4955;
-            cursor: pointer;
-            border: none;
-        }
-
-        .time-display {
-            color: white;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .equinox-indicator {
-            color: #ffd700;
-            font-weight: bold;
-            margin-top: 10px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .equinox-indicator.visible {
-            opacity: 1;
-        }
-
-        .play-pause-btn {
-            background: #5E4955;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            margin: 0 10px;
-        }
-
-        .play-pause-btn:hover {
-            background: #4f3d47;
-        }
-
         /* Street Henge Visualization */
         .street-henge-container {
             background: #FFF;
@@ -1041,113 +881,6 @@
                 </div>
                 
                 <p style="margin-top: 20px;"><em>The orbital view shows Earth's position around the Sun throughout the year. The tilt view shows how the North Pole's orientation relative to the Sun changes, affecting where the Sun appears to set.</em></p>
-            </div>
-
-            <div class="education-section">
-                <h2>🌅 Why Do Henges Happen So Rarely?</h2>
-                <p>You might think that henges would happen all the time for any east-west street, but they're actually quite rare! Here's why:</p>
-                
-                <div class="key-concept">
-                    <h3>🌍 Earth's Tilt Changes Everything</h3>
-                    <p>Earth is tilted <span class="degree-highlight">~23.5°</span> on its axis, which means the sun's path across the sky changes throughout the year.</p>
-                </div>
-
-                <h3>The Sun's Changing Path</h3>
-                <p>The sun only sets at <strong>true west (270°)</strong> twice a year — during the spring and fall equinoxes. For the rest of the year, it sets either north or south of true west:</p>
-                
-                <div class="solar-system-container">
-                    <canvas id="solarSystemCanvas" class="solar-system-canvas"></canvas>
-                    <div class="time-controls">
-                        <div class="time-display" id="timeDisplay">Day 1 of Year</div>
-                        <div class="time-slider-container">
-                            <input type="range" id="timeSlider" class="time-slider" min="0" max="365" value="0" step="1">
-                        </div>
-                        <button id="playPauseBtn" class="play-pause-btn">▶ Play</button>
-                        <div class="equinox-indicator" id="equinoxIndicator">🌅 Equinox - Sun sets due west!</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="education-section">
-                <h2>🌞 Why This Creates Rare Alignments</h2>
-                <p>Most city streets aren't perfectly aligned with true east-west. This creates interesting alignment patterns:</p>
-
-                <div class="example-box">
-                    <h4>🏙️ Chicago Example</h4>
-                    <p><strong>Street bearing:</strong> <span class="degree-highlight">270°</span> (true east-west)</p>
-                    <p><strong>Henge dates:</strong> Spring and fall equinoxes (around March 20 & September 22)</p>
-                    <p>Chicago's grid is aligned with the cardinal directions, so henges happen when the sun sets due west.</p>
-                </div>
-
-                <div class="example-box">
-                    <h4>🗽 Manhattan Example</h4>
-                    <p><strong>Street bearing:</strong> <span class="degree-highlight">299°</span> (northwest orientation)</p>
-                    <p><strong>Henge dates:</strong> Late May and mid-July</p>
-                    <p>Manhattan's grid is rotated, so henges happen when the sun's path matches this tilted orientation — which only occurs twice per year as the sun's path shifts from summer to winter patterns.</p>
-                </div>
-            </div>
-
-            <div class="education-section">
-                <h2>🌞 The Science Behind Henges</h2>
-                
-                <h3>Earth's Axial Tilt</h3>
-                <p>Earth's <span class="degree-highlight">23.5°</span> tilt is what gives us seasons. This tilt also means the sun's position at sunset moves in a predictable pattern throughout the year:</p>
-                <ul>
-                    <li><strong>Summer solstice:</strong> Sun sets furthest north of west</li>
-                    <li><strong>Winter solstice:</strong> Sun sets furthest south of west</li>
-                    <li><strong>Equinoxes:</strong> Sun sets due west</li>
-                </ul>
-
-                <h3>Street Orientation Matters</h3>
-                <p>The key to a henge is the relationship between your street's orientation and the sun's seasonal path:</p>
-                <ul>
-                    <li><strong>Perfect east-west streets (270°):</strong> Get henges at equinoxes</li>
-                    <li><strong>Northwest-oriented streets:</strong> Get henges in late spring/early summer</li>
-                    <li><strong>Southwest-oriented streets:</strong> Get henges in late summer/early winter</li>
-                    <li><strong>North-south streets:</strong> Never get henges (sun doesn't set along them)</li>
-                </ul>
-
-                <h3>Why Only Twice Per Year?</h3>
-                <p>For any given street orientation, the sun's azimuth (compass direction) at sunset matches that orientation exactly twice as it sweeps through its annual cycle. Think of it like a pendulum — it passes through any given point twice per swing.</p>
-            </div>
-
-            <div class="education-section">
-                <h2>🔍 Technical Details</h2>
-                
-                <h3>What This Tool Calculates</h3>
-                <p>This henge finder looks for when the sun's azimuth (compass direction) at <span class="degree-highlight">0.5° altitude</span> matches your street's bearing within <span class="degree-highlight">1°</span>.</p>
-                
-                <h3>Why 0.5° Altitude?</h3>
-                <p>We use 0.5° above the horizon instead of exactly at sunset because:</p>
-                <ul>
-                    <li>It's when the sun appears largest and most dramatic</li>
-                    <li>It accounts for atmospheric refraction</li>
-                    <li>It provides the best viewing experience before the sun disappears</li>
-                </ul>
-
-                <h3>Street Bearing Detection</h3>
-                <p>The tool automatically detects your street's orientation using OpenStreetMap data, but you can adjust it manually if needed. Street bearings are measured clockwise from true north (0° = north, 90° = east, 180° = south, 270° = west).</p>
-            </div>
-
-            <div class="education-section">
-                <h2>🌎 Famous Henges Around the World</h2>
-                
-                <div class="example-box">
-                    <h4>Manhattanhenge (New York)</h4>
-                    <p>The most famous urban henge, occurring around May 28 and July 13 when the sun aligns with Manhattan's tilted street grid.</p>
-                </div>
-
-                <div class="example-box">
-                    <h4>Chicagohenge (Chicago)</h4>
-                    <p>Happens during equinoxes when the sun sets due west along Chicago's cardinal-aligned streets.</p>
-                </div>
-
-                <div class="example-box">
-                    <h4>Torontohenge (Toronto)</h4>
-                    <p>Occurs along Toronto's east-west streets, with timing similar to other cities at similar latitudes.</p>
-                </div>
-
-                <p><em>Try the finder tool with addresses from these cities to see their henge patterns!</em></p>
             </div>
         </div>
     </div>    <script>
@@ -1756,259 +1489,19 @@
             // Add active class to clicked button
             event.target.classList.add('active');
 
-            // Initialize solar system if switching to learn tab
-            if (tabName === 'learn' && !window.solarSystemInitialized) {
-                initSolarSystem();
-                window.solarSystemInitialized = true;
-            }
-        }
-
-        // Solar System Visualization
-        let solarScene, solarRenderer, solarCamera;
-        let sun, earth, earthGroup;
-        let animationId;
-        let isPlaying = false;
-        let currentDay = 0;
-
-        function initSolarSystem() {
-            const canvas = document.getElementById('solarSystemCanvas');
-            if (!canvas) return;
-
-            // Scene setup
-            solarScene = new THREE.Scene();
-            solarCamera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-            solarRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-            solarRenderer.setSize(canvas.clientWidth, canvas.clientHeight);
-            solarRenderer.shadowMap.enabled = true;
-            solarRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
-            solarScene.add(ambientLight);
-
-            // Sun (point light source)
-            const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
-            const sunMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xffffff,
-                emissive: 0xffaa00,
-                emissiveIntensity: 0.8
-            });
-            sun = new THREE.Mesh(sunGeometry, sunMaterial);
-            solarScene.add(sun);
-
-            // Sun light
-            const sunLight = new THREE.PointLight(0xffffff, 2, 100);
-            sunLight.position.set(0, 0, 0);
-            sunLight.castShadow = true;
-            sunLight.shadow.mapSize.width = 2048;
-            sunLight.shadow.mapSize.height = 2048;
-            solarScene.add(sunLight);
-
-            // Earth group (for orbital motion)
-            earthGroup = new THREE.Group();
-            solarScene.add(earthGroup);
-
-            // Earth
-            const earthGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-            
-            // Custom shader material for day/night terminator
-            const earthMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    sunPosition: { value: new THREE.Vector3(0, 0, 0) }
-                },
-                vertexShader: `
-                    varying vec3 vWorldPosition;
-                    varying vec3 vNormal;
-                    
-                    void main() {
-                        vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-                        vNormal = normalize(normalMatrix * normal);
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform vec3 sunPosition;
-                    varying vec3 vWorldPosition;
-                    varying vec3 vNormal;
-                    
-                    void main() {
-                        // Direction from earth surface to sun
-                        vec3 sunDirection = normalize(sunPosition - vWorldPosition);
-                        
-                        // Simple day/night based on whether surface faces sun
-                        float sunAlignment = dot(vNormal, sunDirection);
-                        
-                        // Sharp terminator line
-                        float lightIntensity = step(0.0, sunAlignment);
-                        
-                        // Earth colors
-                        vec3 dayColor = vec3(0.3, 0.7, 0.9);   // Bright blue
-                        vec3 nightColor = vec3(0.05, 0.05, 0.15); // Dark blue
-                        
-                        vec3 finalColor = mix(nightColor, dayColor, lightIntensity);
-                        
-                        gl_FragColor = vec4(finalColor, 1.0);
-                    }
-                `
-            });
-
-            earth = new THREE.Mesh(earthGeometry, earthMaterial);
-            earth.position.set(8, 0, 0); // Distance from sun
-            
-            // Create equator ring (shows axial tilt) - make it more visible
-            const equatorGeometry = new THREE.RingGeometry(0.82, 0.91, 64);
-            const equatorMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0xffff00, 
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 0.95
-            });
-            const equatorRing = new THREE.Mesh(equatorGeometry, equatorMaterial);
-            equatorRing.rotation.x = Math.PI / 2; // Make it horizontal initially
-            
-            // Add a second, slightly larger ring for better visibility
-            const equatorGeometry2 = new THREE.RingGeometry(0.80, 0.93, 64);
-            const equatorMaterial2 = new THREE.MeshBasicMaterial({ 
-                color: 0xffaa00, 
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 0.4
-            });
-            const equatorRing2 = new THREE.Mesh(equatorGeometry2, equatorMaterial2);
-            equatorRing2.rotation.x = Math.PI / 2;
-            
-            // Tilt the equator by 30 degrees to show Earth's axial tilt (more pronounced)
-            const tiltAngle = THREE.MathUtils.degToRad(30);
-            equatorRing.rotation.z = tiltAngle;
-            equatorRing2.rotation.z = tiltAngle;
-            
-            earth.add(equatorRing);
-            earth.add(equatorRing2);
-            earthGroup.add(earth);
-
-            // Camera position
-            solarCamera.position.set(0, 8, 12);
-            solarCamera.lookAt(0, 0, 0);
-
-            // Controls
-            setupSolarSystemControls();
-            
-            // Start animation
-            animate();
-        }
-
-        function setupSolarSystemControls() {
-            const timeSlider = document.getElementById('timeSlider');
-            const playPauseBtn = document.getElementById('playPauseBtn');
-            const timeDisplay = document.getElementById('timeDisplay');
-            const equinoxIndicator = document.getElementById('equinoxIndicator');
-
-            if (!timeSlider || !playPauseBtn) return;
-
-            timeSlider.addEventListener('input', (e) => {
-                currentDay = parseInt(e.target.value);
-                updateSolarSystem();
-                updateTimeDisplay();
-            });
-
-            playPauseBtn.addEventListener('click', () => {
-                isPlaying = !isPlaying;
-                playPauseBtn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
-            });
-
-            function updateTimeDisplay() {
-                const month = Math.floor(currentDay / 30.44) + 1;
-                const dayOfMonth = Math.floor((currentDay % 30.44)) + 1;
-                timeDisplay.textContent = `Day ${currentDay + 1} of Year (Month ${month}, Day ${dayOfMonth})`;
+            // Initialize street visualization if switching to learn tab
+            if (tabName === 'learn' && !streetAnimationInitialized) {
+                setTimeout(() => {
+                    initStreetVisualization();
+                }, 100);
                 
-                // Check for equinoxes (around day 79 and 266)
-                const isEquinox = (currentDay >= 78 && currentDay <= 82) || (currentDay >= 264 && currentDay <= 268);
-                if (isEquinox) {
-                    equinoxIndicator.classList.add('visible');
-                } else {
-                    equinoxIndicator.classList.remove('visible');
+                if (!orbitalAnimationInitialized) {
+                    setTimeout(() => {
+                        initOrbitalVisualization();
+                    }, 150);
                 }
             }
-
-            updateTimeDisplay();
         }
-
-        function updateSolarSystem() {
-            if (!earthGroup || !earth) return;
-
-            // Earth orbital position (365 days = full circle)
-            const orbitalAngle = (currentDay / 365) * Math.PI * 2;
-            earthGroup.rotation.y = orbitalAngle;
-
-            // Earth rotation (daily spin) - only for visual effect
-            earth.rotation.y = (currentDay * 5) * Math.PI / 180; // Slower rotation for better visibility
-
-            // Update shader uniforms for day/night terminator
-            // The sun is always at (0,0,0), so we need the earth's world position
-            const earthWorldPosition = new THREE.Vector3();
-            earth.getWorldPosition(earthWorldPosition);
-            
-            if (earth.material.uniforms) {
-                // Sun position in world coordinates (always at origin)
-                earth.material.uniforms.sunPosition.value.set(0, 0, 0);
-            }
-
-            // Update time slider
-            const timeSlider = document.getElementById('timeSlider');
-            if (timeSlider) {
-                timeSlider.value = currentDay;
-            }
-        }
-
-        function animate() {
-            if (!solarRenderer || !solarScene || !solarCamera) return;
-
-            animationId = requestAnimationFrame(animate);
-
-            // Auto-advance time if playing
-            if (isPlaying) {
-                currentDay = (currentDay + 1) % 365;
-                updateSolarSystem();
-                
-                const timeDisplay = document.getElementById('timeDisplay');
-                const equinoxIndicator = document.getElementById('equinoxIndicator');
-                
-                if (timeDisplay) {
-                    const month = Math.floor(currentDay / 30.44) + 1;
-                    const dayOfMonth = Math.floor((currentDay % 30.44)) + 1;
-                    timeDisplay.textContent = `Day ${currentDay + 1} of Year (Month ${month}, Day ${dayOfMonth})`;
-                    
-                    // Check for equinoxes (around day 79 and 266)
-                    const isEquinox = (currentDay >= 78 && currentDay <= 82) || (currentDay >= 264 && currentDay <= 268);
-                    if (equinoxIndicator) {
-                        if (isEquinox) {
-                            equinoxIndicator.classList.add('visible');
-                        } else {
-                            equinoxIndicator.classList.remove('visible');
-                        }
-                    }
-                }
-            }
-
-            // Continuous earth rotation for visual effect (much slower)
-            if (earth) {
-                earth.rotation.y += 0.002;
-            }
-
-            solarRenderer.render(solarScene, solarCamera);
-        }
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (solarRenderer && solarCamera) {
-                const canvas = document.getElementById('solarSystemCanvas');
-                if (canvas) {
-                    solarCamera.aspect = canvas.clientWidth / canvas.clientHeight;
-                    solarCamera.updateProjectionMatrix();
-                    solarRenderer.setSize(canvas.clientWidth, canvas.clientHeight);
-                }
-            }
-        });
 
         // Street Henge Visualization
         let streetCanvas, streetCtx, streetNonHengeCanvas, streetNonHengeCtx;
@@ -2262,8 +1755,8 @@
             // Draw sun at actual position (no clamping)
             const sunGradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius);
             sunGradient.addColorStop(0, '#FFFFFF'); // Bright white center
-            sunGradient.addColorStop(0.3, '#DC816E'); // DC816E
-            sunGradient.addColorStop(0.7, '#DC816E'); // DC816E
+            sunGradient.addColorStop(0.6, '#FFFFFF'); // More white
+            sunGradient.addColorStop(0.8, '#DC816E'); // DC816E
             sunGradient.addColorStop(1, '#DC816E'); // DC816E edge
             
             ctx.fillStyle = sunGradient;
@@ -2338,23 +1831,11 @@
 
         function updateOrbitalTimeDisplay() {
             const timeDisplay = document.getElementById('orbitalTimeDisplay');
-            const equinoxIndicator = document.getElementById('orbitalEquinoxIndicator');
             if (!timeDisplay) return;
             
             timeDisplay.textContent = `Day ${orbitalCurrentDay + 1}`;
             
-            // Check for equinoxes and solstices
-            if (equinoxIndicator) {
-                const isEquinox = (orbitalCurrentDay >= 79 && orbitalCurrentDay <= 83) || // Spring equinox
-                                 (orbitalCurrentDay >= 265 && orbitalCurrentDay <= 269); // Fall equinox
-                if (isEquinox) {
-                    equinoxIndicator.classList.add('visible');
-                    equinoxIndicator.style.opacity = '1';
-                } else {
-                    equinoxIndicator.classList.remove('visible');
-                    equinoxIndicator.style.opacity = '0';
-                }
-            }
+            // Equinox indicator removed as requested
         }
 
         function updateOrbitalVisualization() {
@@ -2493,13 +1974,11 @@
             tiltCtx.fill();
             
             // Calculate tilt angle based on day of year
-            // 23.5 degrees maximum tilt, varies with season
             const axisLength = 40;
             const seasonalAngle = (orbitalCurrentDay / 365) * Math.PI * 2;
-            const maxX = Math.sin(23.5 * Math.PI / 180) * axisLength; // max the pole will move on the X axis
-            const offsetY = Math.cos(23.5 * Math.PI / 180) * axisLength; // half the height of our pole line on the Y axis
-            // const tiltDegrees = 23.5 * Math.sin(seasonalAngle);
-            //const tiltRadians = (tiltDegrees * Math.PI) / 180;
+            const tiltDegrees = 23.5 * Math.sin(seasonalAngle);
+            const maxX = Math.sin(23.5 * Math.PI / 180) * axisLength;
+            const offsetY = Math.cos(23.5 * Math.PI / 180) * axisLength;
             
             // Draw rotational axis showing tilt
             const axisEndX = centerX - Math.sin(seasonalAngle) * maxX;
@@ -2554,23 +2033,6 @@
             tiltCtx.lineTo(centerX, centerY + 50);
             tiltCtx.stroke();
             tiltCtx.setLineDash([]);
-            
-            // Add seasonal information
-            let seasonText = '';
-            if (orbitalCurrentDay >= 0 && orbitalCurrentDay < 79) {
-                seasonText = 'Winter → Spring';
-            } else if (orbitalCurrentDay >= 79 && orbitalCurrentDay < 172) {
-                seasonText = 'Spring → Summer';
-            } else if (orbitalCurrentDay >= 172 && orbitalCurrentDay < 265) {
-                seasonText = 'Summer → Fall';
-            } else {
-                seasonText = 'Fall → Winter';
-            }
-            
-            tiltCtx.fillStyle = '#CCC';
-            tiltCtx.font = '12px Arial';
-            tiltCtx.textAlign = 'center';
-            tiltCtx.fillText(seasonText, centerX, 30);
         }
 
         // Update the showTab function to initialize all visualizations
