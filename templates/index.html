@@ -762,7 +762,7 @@
 
         /* Street Henge Visualization */
         .street-henge-container {
-            background: #87CEEB;
+            background: #FFF;
             border-radius: 10px;
             margin: 30px 0;
             padding: 20px;
@@ -958,24 +958,49 @@
             <!-- Street Henge Visualization -->
             <div class="education-section">
                 <h2>🏙️ See How the Sun Moves Down Your Street</h2>
-                <p>Watch how the sun's position changes throughout the day, and see why henges only happen at specific times:</p>
+                <p>Compare two different dates to see why henges only happen at specific times of year:</p>
                 
-                <div class="street-henge-container">
-                    <canvas id="streetHengeCanvas" class="street-henge-canvas"></canvas>
-                    <div class="street-time-controls">
-                        <div class="street-time-display" id="streetTimeDisplay">6:00 PM</div>
-                        <div class="street-time-slider-container">
-                            <input type="range" id="streetTimeSlider" class="street-time-slider" min="0" max="240" value="120" step="1">
+                <div style="display: flex; gap: 20px; margin: 30px 0;">
+                    <!-- Non-Henge Date View (Left) -->
+                    <div style="flex: 1;">
+                        <h3 style="text-align: center; color: #5E4955; margin-bottom: 15px;">Non-Henge Date</h3>
+                        <div class="street-henge-container">
+                            <canvas id="streetNonHengeCanvas" class="street-henge-canvas"></canvas>
+                            <div class="street-time-controls">
+                                <div class="street-time-display" id="streetNonHengeTimeDisplay">6:15 PM</div>
+                                <div class="street-time-slider-container">
+                                    <input type="range" id="streetNonHengeTimeSlider" class="street-time-slider" min="90" max="180" value="135" step="1">
+                                </div>
+                                <div class="street-time-labels">
+                                    <span>5:30 PM</span>
+                                    <span>7:00 PM</span>
+                                </div>
+                                <div class="henge-indicator" id="nonHengeIndicator">Sun misses the street</div>
+                            </div>
                         </div>
-                        <div class="street-time-labels">
-                            <span>4:00 PM</span>
-                            <span>8:00 PM</span>
+                    </div>
+                    
+                    <!-- Henge Date View (Right) -->
+                    <div style="flex: 1;">
+                        <h3 style="text-align: center; color: #5E4955; margin-bottom: 15px;">Henge Date 🌅</h3>
+                        <div class="street-henge-container">
+                            <canvas id="streetHengeCanvas" class="street-henge-canvas"></canvas>
+                            <div class="street-time-controls">
+                                <div class="street-time-display" id="streetTimeDisplay">7:30 PM</div>
+                                <div class="street-time-slider-container">
+                                    <input type="range" id="streetTimeSlider" class="street-time-slider" min="165" max="255" value="210" step="1">
+                                </div>
+                                <div class="street-time-labels">
+                                    <span>6:45 PM</span>
+                                    <span>8:15 PM</span>
+                                </div>
+                                <div class="henge-indicator" id="hengeIndicator">🌅 Perfect Henge Alignment!</div>
+                            </div>
                         </div>
-                        <div class="henge-indicator" id="hengeIndicator">🌅 Perfect Henge Alignment!</div>
                     </div>
                 </div>
                 
-                <p style="margin-top: 20px;"><em>This shows a typical Manhattan street (299° bearing). Notice how the sun only aligns perfectly with the street at specific times!</em></p>
+                <p style="margin-top: 20px;"><em>Both views show a typical Manhattan street (299° bearing). The left view shows a non-henge date where the sun sets at the wrong angle, while the right view shows a henge date where the sun aligns perfectly with the street!</em></p>
             </div>
 
             <!-- Orbital Mechanics Visualization -->
@@ -1986,37 +2011,55 @@
         });
 
         // Street Henge Visualization
-        let streetCanvas, streetCtx;
-        let currentTimeMinutes = 120; // Start at 6:00 PM (4PM + 120 minutes)
+        let streetCanvas, streetCtx, streetNonHengeCanvas, streetNonHengeCtx;
+        let currentTimeMinutes = 210; // Start at 7:30 PM (4PM + 210 minutes) for henge view
+        let currentNonHengeTimeMinutes = 135; // Start at 6:15 PM for non-henge view
         const MANHATTAN_BEARING = 299; // Manhattan street bearing
         let streetAnimationInitialized = false;
 
         function initStreetVisualization() {
             streetCanvas = document.getElementById('streetHengeCanvas');
-            if (!streetCanvas) return;
+            streetNonHengeCanvas = document.getElementById('streetNonHengeCanvas');
+            if (!streetCanvas || !streetNonHengeCanvas) return;
             
             streetCtx = streetCanvas.getContext('2d');
+            streetNonHengeCtx = streetNonHengeCanvas.getContext('2d');
+            
             streetCanvas.width = streetCanvas.clientWidth;
             streetCanvas.height = streetCanvas.clientHeight;
+            streetNonHengeCanvas.width = streetNonHengeCanvas.clientWidth;
+            streetNonHengeCanvas.height = streetNonHengeCanvas.clientHeight;
             
             setupStreetControls();
             updateStreetScene();
+            updateNonHengeScene();
             streetAnimationInitialized = true;
         }
 
         function setupStreetControls() {
             const timeSlider = document.getElementById('streetTimeSlider');
             const timeDisplay = document.getElementById('streetTimeDisplay');
+            const nonHengeTimeSlider = document.getElementById('streetNonHengeTimeSlider');
+            const nonHengeTimeDisplay = document.getElementById('streetNonHengeTimeDisplay');
             
-            if (!timeSlider || !timeDisplay) return;
+            if (!timeSlider || !timeDisplay || !nonHengeTimeSlider || !nonHengeTimeDisplay) return;
             
+            // Henge date controls
             timeSlider.addEventListener('input', (e) => {
                 currentTimeMinutes = parseInt(e.target.value);
                 updateTimeDisplay();
                 updateStreetScene();
             });
             
+            // Non-henge date controls
+            nonHengeTimeSlider.addEventListener('input', (e) => {
+                currentNonHengeTimeMinutes = parseInt(e.target.value);
+                updateNonHengeTimeDisplay();
+                updateNonHengeScene();
+            });
+            
             updateTimeDisplay();
+            updateNonHengeTimeDisplay();
         }
 
         function updateTimeDisplay() {
@@ -2037,15 +2080,63 @@
             timeDisplay.textContent = timeString;
         }
 
+        function updateNonHengeTimeDisplay() {
+            const timeDisplay = document.getElementById('streetNonHengeTimeDisplay');
+            if (!timeDisplay) return;
+            
+            // Convert minutes since 4 PM to actual time
+            const startHour = 16; // 4 PM
+            const totalMinutes = currentNonHengeTimeMinutes;
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            const actualHour = startHour + hours;
+            
+            const displayHour = actualHour > 12 ? actualHour - 12 : actualHour;
+            const ampm = actualHour >= 12 ? 'PM' : 'AM';
+            const timeString = `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            
+            timeDisplay.textContent = timeString;
+        }
+
         function updateStreetScene() {
             if (!streetCtx || !streetCanvas) return;
             
-            // Get current time for API call
-            const now = new Date();
+            // Get current time for API call - May 27, 2026 (henge date)
             const startHour = 16; // 4 PM
             const hours = Math.floor(currentTimeMinutes / 60);
             const minutes = currentTimeMinutes % 60;
-            const targetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour + hours, minutes);
+            const targetTime = new Date(2026, 5, 28, startHour + hours, minutes); // December 27, 2026
+
+            // Call API to get sun position
+            fetch('/lookup_azimuth_altitude', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    time: targetTime.toISOString(),
+                    road_bearing: MANHATTAN_BEARING
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                drawStreetScene(streetCtx, streetCanvas, data.graphic_az, data.altitude, 'hengeIndicator');
+            })
+            .catch(error => {
+                console.error('Error fetching sun position:', error);
+                // Draw scene with default values if API fails
+                drawStreetScene(streetCtx, streetCanvas, 0, 5, 'hengeIndicator');
+            });
+        }
+
+        function updateNonHengeScene() {
+            if (!streetNonHengeCtx || !streetNonHengeCanvas) return;
+            
+            // Get current time for API call - September 10, 2025 (non-henge date)
+            const startHour = 16; // 4 PM
+            const hours = Math.floor(currentNonHengeTimeMinutes / 60);
+            const minutes = currentNonHengeTimeMinutes % 60;
+            const targetTime = new Date(2025, 8, 10, startHour + hours, minutes); // September 10, 2025
             
             // Call API to get sun position
             fetch('/lookup_azimuth_altitude', {
@@ -2060,23 +2151,23 @@
             })
             .then(response => response.json())
             .then(data => {
-                drawStreetScene(data.graphic_az, data.altitude);
+                drawStreetScene(streetNonHengeCtx, streetNonHengeCanvas, data.graphic_az, data.altitude, 'nonHengeIndicator');
             })
             .catch(error => {
                 console.error('Error fetching sun position:', error);
                 // Draw scene with default values if API fails
-                drawStreetScene(0, 5);
+                drawStreetScene(streetNonHengeCtx, streetNonHengeCanvas, 15, 5, 'nonHengeIndicator');
             });
         }
 
-        function drawStreetScene(graphicAz, altitude) {
-            if (!streetCtx || !streetCanvas) return;
+        function drawStreetScene(ctx, canvas, graphicAz, altitude, indicatorId) {
+            if (!ctx || !canvas) return;
             
-            const width = streetCanvas.width;
-            const height = streetCanvas.height;
+            const width = canvas.width;
+            const height = canvas.height;
             
             // Clear canvas
-            streetCtx.clearRect(0, 0, width, height);
+            ctx.clearRect(0, 0, width, height);
             
             // Define perspective parameters
             const vanishingPointX = width / 2;
@@ -2084,65 +2175,65 @@
             const horizonY = vanishingPointY;
             
             // Draw sky gradient (only above horizon)
-            const skyGradient = streetCtx.createLinearGradient(0, 0, 0, horizonY);
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, horizonY);
             skyGradient.addColorStop(0, '#E6F3FF'); // Very light blue
             skyGradient.addColorStop(0.5, '#FFE6CC'); // Very light peach
             skyGradient.addColorStop(1, '#FFD6B3'); // Light warm beige
             
-            streetCtx.fillStyle = skyGradient;
-            streetCtx.fillRect(0, 0, width, horizonY);
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, width, horizonY);
             
             // Draw ground/landscape below horizon using variations of #5E4955
-            const groundGradient = streetCtx.createLinearGradient(0, horizonY, 0, height);
+            const groundGradient = ctx.createLinearGradient(0, horizonY, 0, height);
             groundGradient.addColorStop(0, '#7A5F73'); // Lighter version of #5E4955
             groundGradient.addColorStop(1, '#5E4955'); // Original color
             
-            streetCtx.fillStyle = groundGradient;
-            streetCtx.fillRect(0, horizonY, width, height - horizonY);
+            ctx.fillStyle = groundGradient;
+            ctx.fillRect(0, horizonY, width, height - horizonY);
             
             // Draw street (perspective view) - extends to bottom of canvas
             const streetWidthBottom = width * 0.6;
             const streetWidthTop = 20; // Width at vanishing point
             
             // Street surface
-            streetCtx.fillStyle = '#444';
-            streetCtx.beginPath();
-            streetCtx.moveTo((width - streetWidthBottom) / 2, height);
-            streetCtx.lineTo((width + streetWidthBottom) / 2, height);
-            streetCtx.lineTo(vanishingPointX + streetWidthTop / 2, vanishingPointY);
-            streetCtx.lineTo(vanishingPointX - streetWidthTop / 2, vanishingPointY);
-            streetCtx.closePath();
-            streetCtx.fill();
+            ctx.fillStyle = '#444';
+            ctx.beginPath();
+            ctx.moveTo((width - streetWidthBottom) / 2, height);
+            ctx.lineTo((width + streetWidthBottom) / 2, height);
+            ctx.lineTo(vanishingPointX + streetWidthTop / 2, vanishingPointY);
+            ctx.lineTo(vanishingPointX - streetWidthTop / 2, vanishingPointY);
+            ctx.closePath();
+            ctx.fill();
             
             // Draw center line on street
-            streetCtx.strokeStyle = '#FFFF99';
-            streetCtx.lineWidth = 3;
-            streetCtx.setLineDash([10, 5]);
-            streetCtx.beginPath();
-            streetCtx.moveTo(width / 2, height);
-            streetCtx.lineTo(vanishingPointX, vanishingPointY);
-            streetCtx.stroke();
-            streetCtx.setLineDash([]);
+            ctx.strokeStyle = '#FFFF99';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(width / 2, height);
+            ctx.lineTo(vanishingPointX, vanishingPointY);
+            ctx.stroke();
+            ctx.setLineDash([]);
             
             // Draw street edge lines
-            streetCtx.strokeStyle = '#666';
-            streetCtx.lineWidth = 2;
-            streetCtx.beginPath();
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
             // Left edge
-            streetCtx.moveTo((width - streetWidthBottom) / 2, height);
-            streetCtx.lineTo(vanishingPointX - streetWidthTop / 2, vanishingPointY);
-            streetCtx.stroke();
+            ctx.moveTo((width - streetWidthBottom) / 2, height);
+            ctx.lineTo(vanishingPointX - streetWidthTop / 2, vanishingPointY);
+            ctx.stroke();
             // Right edge
-            streetCtx.beginPath();
-            streetCtx.moveTo((width + streetWidthBottom) / 2, height);
-            streetCtx.lineTo(vanishingPointX + streetWidthTop / 2, vanishingPointY);
-            streetCtx.stroke();
+            ctx.beginPath();
+            ctx.moveTo((width + streetWidthBottom) / 2, height);
+            ctx.lineTo(vanishingPointX + streetWidthTop / 2, vanishingPointY);
+            ctx.stroke();
             
             // Draw sun
-            drawSun(graphicAz, altitude, width, height, vanishingPointX, vanishingPointY);
+            drawSun(ctx, graphicAz, altitude, width, height, vanishingPointX, vanishingPointY);
             
             // Check if it's a henge (sun aligned with street)
-            const hengeIndicator = document.getElementById('hengeIndicator');
+            const hengeIndicator = document.getElementById(indicatorId);
             if (hengeIndicator) {
                 if (Math.abs(graphicAz) < 5 && altitude > 0) { // Close to alignment
                     hengeIndicator.classList.add('visible');
@@ -2152,7 +2243,7 @@
             }
         }
 
-        function drawSun(graphicAz, altitude, width, height, vanishingPointX, vanishingPointY) {
+        function drawSun(ctx, graphicAz, altitude, width, height, vanishingPointX, vanishingPointY) {
             if (altitude <= 0) return; // Sun is below horizon
             
             // Convert graphic azimuth to screen position
@@ -2161,45 +2252,47 @@
             const sunX = vanishingPointX + (graphicAz * 3); // Scale the azimuth for visual effect
             const sunY = vanishingPointY - (altitude * 8); // Higher altitude = higher on screen
             
-            // Ensure sun stays within reasonable bounds
-            const clampedSunX = Math.max(50, Math.min(width - 50, sunX));
-            const clampedSunY = Math.max(50, Math.min(height * 0.8, sunY));
+            // Check if sun is outside visible bounds - if so, don't draw it
+            const sunRadius = 18;
+            if (sunY + sunRadius < 0) return; // Sun is above canvas
+            if (sunY - sunRadius > height) return; // Sun is below canvas
+            if (sunX + sunRadius < 0) return; // Sun is to the left of canvas
+            if (sunX - sunRadius > width) return; // Sun is to the right of canvas
             
-            // Draw sun
-            const sunRadius = 18; // Smaller sun
-            const sunGradient = streetCtx.createRadialGradient(clampedSunX, clampedSunY, 0, clampedSunX, clampedSunY, sunRadius);
+            // Draw sun at actual position (no clamping)
+            const sunGradient = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius);
             sunGradient.addColorStop(0, '#FFFFFF'); // Bright white center
             sunGradient.addColorStop(0.3, '#DC816E'); // DC816E
             sunGradient.addColorStop(0.7, '#DC816E'); // DC816E
             sunGradient.addColorStop(1, '#DC816E'); // DC816E edge
             
-            streetCtx.fillStyle = sunGradient;
-            streetCtx.beginPath();
-            streetCtx.arc(clampedSunX, clampedSunY, sunRadius, 0, Math.PI * 2);
-            streetCtx.fill();
+            ctx.fillStyle = sunGradient;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+            ctx.fill();
             
             // Draw sun rays (brighter and more prominent)
-            streetCtx.strokeStyle = '#DC816E'; // DC816E rays
-            streetCtx.lineWidth = 3; // Thicker rays
-            streetCtx.shadowColor = '#DC816E';
-            streetCtx.shadowBlur = 5;
+            ctx.strokeStyle = '#DC816E'; // DC816E rays
+            ctx.lineWidth = 3; // Thicker rays
+            ctx.shadowColor = '#DC816E';
+            ctx.shadowBlur = 5;
             for (let i = 0; i < 8; i++) {
                 const angle = (i * Math.PI * 2) / 8;
                 const rayLength = 15; // Longer rays for better visibility
-                streetCtx.beginPath();
-                streetCtx.moveTo(
-                    clampedSunX + Math.cos(angle) * (sunRadius + 3),
-                    clampedSunY + Math.sin(angle) * (sunRadius + 3)
+                ctx.beginPath();
+                ctx.moveTo(
+                    sunX + Math.cos(angle) * (sunRadius + 3),
+                    sunY + Math.sin(angle) * (sunRadius + 3)
                 );
-                streetCtx.lineTo(
-                    clampedSunX + Math.cos(angle) * (sunRadius + rayLength),
-                    clampedSunY + Math.sin(angle) * (sunRadius + rayLength)
+                ctx.lineTo(
+                    sunX + Math.cos(angle) * (sunRadius + rayLength),
+                    sunY + Math.sin(angle) * (sunRadius + rayLength)
                 );
-                streetCtx.stroke();
+                ctx.stroke();
             }
             // Reset shadow
-            streetCtx.shadowColor = 'transparent';
-            streetCtx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
         }
 
         // Orbital Visualization Variables
