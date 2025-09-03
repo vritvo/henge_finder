@@ -822,7 +822,7 @@
                     
                     <!-- Henge Date View (Right) -->
                     <div style="flex: 1;">
-                        <h3 style="text-align: center; color: #5E4955; margin-bottom: 15px;">Henge Date 🌅</h3>
+                        <h3 style="text-align: center; color: #5E4955; margin-bottom: 15px;">Henge Date</h3>
                         <div class="street-henge-container">
                             <canvas id="streetHengeCanvas" class="street-henge-canvas"></canvas>
                             <div class="street-time-controls">
@@ -862,6 +862,11 @@
                         <h3 style="text-align: center; color: #5E4955; margin-bottom: 15px;">Earth's Tilt (Side View)</h3>
                         <div style="background: #1a1a2e; border-radius: 10px; padding: 20px;">
                             <canvas id="tiltCanvas" style="width: 100%; height: 300px; border-radius: 8px; display: block; background: radial-gradient(circle at center, #16213e 0%, #0f0f23 100%);"></canvas>
+                        </div>
+                        <!-- Henge Message Display -->
+                        <div id="hengeMessage" style="margin-top: 15px; padding: 10px; background: rgba(255, 179, 71, 0.1); border-radius: 8px; border-left: 4px solid #FFB347; opacity: 0; transition: opacity 0.3s; text-align: center;">
+                            <div style="color: #FFB347; font-weight: bold; font-size: 14px;">🌅 Sun azimuth at sunset matches road running down equator!</div>
+                            <div style="color: #FFB347; font-weight: bold; font-size: 16px; margin-top: 5px;">Henge date!</div>
                         </div>
                     </div>
                </div> 
@@ -1973,6 +1978,13 @@
             tiltCtx.arc(centerX, centerY, 25, 0, Math.PI * 2);
             tiltCtx.fill();
             
+            // Draw shaded half-circle on the right side (away from sun)
+            // This represents the dark side of Earth that's not facing the sun
+            tiltCtx.fillStyle = 'rgba(0, 0, 0, 0.6)'; // Semi-transparent black
+            tiltCtx.beginPath();
+            tiltCtx.arc(centerX, centerY, 25, -Math.PI/2, Math.PI/2); // Right half of circle
+            tiltCtx.fill();
+            
             // Calculate tilt angle based on day of year
             const axisLength = 40;
             const seasonalAngle = (orbitalCurrentDay / 365) * Math.PI * 2;
@@ -1991,6 +2003,34 @@
             tiltCtx.beginPath();
             tiltCtx.moveTo(axisStartX, axisStartY);
             tiltCtx.lineTo(axisEndX, axisEndY);
+            tiltCtx.stroke();
+            
+            // Draw latitude line at the equator (orthogonal to the N-S pole line)
+            // Calculate the perpendicular direction to the pole line
+            const poleVectorX = axisEndX - axisStartX;
+            const poleVectorY = axisEndY - axisStartY;
+            
+            // Perpendicular vector (rotated 90 degrees)
+            const latVectorX = -poleVectorY;
+            const latVectorY = poleVectorX;
+            
+            // Normalize and scale to reach earth's edge
+            const latVectorLength = Math.sqrt(latVectorX * latVectorX + latVectorY * latVectorY);
+            const latLineLength = 25; // Same as earth radius
+            const normalizedLatX = (latVectorX / latVectorLength) * latLineLength;
+            const normalizedLatY = (latVectorY / latVectorLength) * latLineLength;
+            
+            // Draw latitude line through center
+            const latStartX = centerX - normalizedLatX;
+            const latStartY = centerY - normalizedLatY;
+            const latEndX = centerX + normalizedLatX;
+            const latEndY = centerY + normalizedLatY;
+            
+            tiltCtx.strokeStyle = '#FFB347'; // Orange color for latitude line
+            tiltCtx.lineWidth = 3;
+            tiltCtx.beginPath();
+            tiltCtx.moveTo(latStartX, latStartY);
+            tiltCtx.lineTo(latEndX, latEndY);
             tiltCtx.stroke();
             
             // Draw North Pole marker
@@ -2032,7 +2072,30 @@
             tiltCtx.moveTo(centerX, centerY - 50);
             tiltCtx.lineTo(centerX, centerY + 50);
             tiltCtx.stroke();
+            
+            // Check if we're in a henge condition (tilt within ±0.5 degrees)
+            const isHengeCondition = Math.abs(tiltDegrees) <= 0.5;
+            
+            // Draw horizontal sunlight line from edge of sun to earth
+            // Change color to match equator line when in henge condition
+            tiltCtx.strokeStyle = isHengeCondition ? '#FFB347' : '#666'; // Orange if henge, grey otherwise
+            tiltCtx.lineWidth = isHengeCondition ? 3 : 1; // Thicker line if henge
+            tiltCtx.beginPath();
+            tiltCtx.moveTo(70, centerY); // Start from edge of sun (sun radius is 20, center at 50, so edge at 70)
+            tiltCtx.lineTo(centerX - 25, centerY); // End at left edge of earth (earth radius is 25)
+            tiltCtx.stroke();
+            
             tiltCtx.setLineDash([]);
+            
+            // Update the henge message display below the canvas
+            updateHengeMessage(isHengeCondition);
+        }
+
+        function updateHengeMessage(isHengeCondition) {
+            const hengeMessage = document.getElementById('hengeMessage');
+            if (hengeMessage) {
+                hengeMessage.style.opacity = isHengeCondition ? '1' : '0';
+            }
         }
 
         // Update the showTab function to initialize all visualizations
