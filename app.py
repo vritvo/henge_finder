@@ -4,6 +4,8 @@ import datetime
 from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
 import traceback
 from astral import Observer, sun
+from sunset_calculator import calculate_sunset_azimuths_for_year
+from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
@@ -127,6 +129,68 @@ def lookup_address():
         return jsonify({
             'error': 'An unexpected error occurred while processing your request. Please try again or contact support if the problem persists.'
         }), 500
+
+
+@app.route('/lookup_sunset_angles', methods=['POST'])
+def lookup_sunset_angles():
+    """Endpoint that calculates sun azimuth for every day of the year at a given location"""
+    try:
+        data = request.get_json()
+        address = data.get('address')
+        year = data.get('year')  # Optional year, defaults to current year
+        
+        if not address:
+            return jsonify({'error': 'Please enter an address to calculate sunset angles.'}), 400
+
+        # Get coordinates and standardized address
+        try:
+            location = get_location(address)
+            lat, lon = get_coordinates(location)
+            standardized_address = get_standardized_address(location)
+            
+            try:
+                check_latitude(lat)
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
+                
+        except GeocodingError as e:
+            print(f"Geocoding error: {e}")
+            return jsonify({
+                'error': f"Could not find the address '{address}'. Please check the spelling and try again."
+            }), 400
+        except Exception as e:
+            print(f"Unexpected error getting coordinates: {e}")
+            return jsonify({'error': f'Error processing address: {str(e)}'}), 400
+
+        # Calculate sunset angles with henge detection
+        try:
+            target_altitude_deg = 0.5
+            result = calculate_sunset_azimuths_for_year(lat, lon, year, target_altitude_deg)
+            
+            # Add address and coordinate info to response
+            response_data = {
+                'address': standardized_address,
+                'coordinates': {'lat': lat, 'lon': lon},
+                'year': year if year else datetime.now(ZoneInfo("UTC")).year,
+                'sunset_angles': result
+            }
+            
+            return jsonify(response_data)
+            
+        except Exception as e:
+            print(f"Error calculating sunset angles: {e}")
+            traceback.print_exc()
+            return jsonify({
+                'error': 'An error occurred while calculating sunset angles. Please try again.'
+            }), 500
+            
+    except Exception as e:
+        print(f"Unexpected error in lookup_sunset_angles: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'error': 'An unexpected error occurred while processing your request. Please try again or contact support if the problem persists.'
+        }), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)

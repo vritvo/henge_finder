@@ -8,6 +8,7 @@ Finds when the sun aligns with your street for a perfect sunset view (like [Manh
 
 ## Installing & Running
 
+### Command Line Tool
    ```bash
    pip install -r requirements.txt
    ```
@@ -16,6 +17,31 @@ That's it! Then just run with
 ```
 python hengefinder.py
 ```
+
+### Web Application
+To run the web interface:
+
+1. Create a virtual environment with `uv`:
+   ```bash
+   uv venv
+   ```
+
+2. Activate the virtual environment:
+   ```bash
+   source .venv/bin/activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   uv pip install -r requirements.txt
+   ```
+
+4. Run the web app:
+   ```bash
+   python app.py
+   ```
+
+The web app will be available at `http://localhost:8080`
 
 Some sample addresses:
 
