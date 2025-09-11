@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from astral import Observer, sun
-from typing import List, Tuple, Optional, Dict, Any
+from typing import Dict, Any
 from zoneinfo import ZoneInfo
 from utils import get_horizon_azimuth, get_timezone_from_coordinates
 from config import MATCH_THRESHOLD_DEG
@@ -11,9 +11,9 @@ def calculate_sunset_azimuths_for_year(
     lon: float, 
     year: int = None,
     target_altitude_deg: float = 0.5,
-) -> List[Dict[str, Any]]:
+) -> Dict[int, Dict[str, Any]]:
     """
-    Calculate sun azimuth at target altitude for every day of the year starting from today.
+    Calculate sun azimuth at target altitude for every day of the year.
     
     Args:
         lat: Latitude in degrees
@@ -22,7 +22,7 @@ def calculate_sunset_azimuths_for_year(
         target_altitude_deg: Sun altitude in degrees (default: 0.5)
         
     Returns:
-        List of dictionaries with 'date' and 'azimuth' keys
+        Dictionary with day-of-year (0-364) as keys and dictionaries with 'date' and 'azimuth' as values
     """
     # Round coordinates to 3 decimal places
     lat = round(lat, 3)
@@ -34,45 +34,39 @@ def calculate_sunset_azimuths_for_year(
     # Get timezone for the location (needed for astral library)
     tz = get_timezone_from_coordinates(lat, lon)
     
-    # Start with today's date in UTC
+    # Use the specified year or current year
     if year is None:
         year = datetime.now(ZoneInfo("UTC")).year
     
-    start_date_utc = datetime.now(ZoneInfo("UTC")).replace(hour=0, minute=0, second=0, microsecond=0)
+    # Start with January 1st of the specified year
+    start_date = datetime(year, 1, 1, tzinfo=tz)
     
-    results = []
+    results = {}
     
-    for day in range(365):  # Calculate for next 365 days
-        current_date_utc = start_date_utc + timedelta(days=day)
-        
-        # Convert to local timezone for astral calculations
-        current_date_local = current_date_utc.astimezone(tz)
+    for day_of_year in range(365):  # Calculate for all 365 days of the year
+        current_date = start_date + timedelta(days=day_of_year)
         
         try:
             # Use the existing get_horizon_azimuth function from utils.py
             azimuth, exact_time = get_horizon_azimuth(
-                tz, obs, current_date_local, target_altitude_deg
+                tz, obs, current_date, target_altitude_deg
             )
             
             if azimuth is not None and exact_time is not None:
-                # Convert back to UTC for consistent results
+                # Convert to UTC for consistent results
                 exact_time_utc = exact_time.astimezone(ZoneInfo("UTC"))
                 
-                # Create dictionary instead of SunsetAngle object
-                sunset_data = {
+                # Store by day-of-year index (0-364)
+                results[day_of_year] = {
                     'date': exact_time_utc.isoformat(),
                     'azimuth': round(azimuth, 2)
                 }
-                results.append(sunset_data)
                 
         except (ValueError, AttributeError) as e:
-            print(f"Could not get azimuth for {current_date_utc.date()}: {e}")
+            print(f"Could not get azimuth for {current_date.date()}: {e}")
             continue
         except Exception as e:
-            print(f"Unexpected error for {current_date_utc.date()}: {e}")
+            print(f"Unexpected error for {current_date.date()}: {e}")
             continue
-    
-    # Sort results by date to ensure ascending order
-    results.sort(key=lambda x: x['date'])
     
     return results

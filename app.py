@@ -24,6 +24,10 @@ demo_observer = make_observer()
 def index():
     return render_template('index.html')
 
+@app.route('/henge_near_me')
+def henge_near_me():
+    return render_template('henge_near_me.html')
+
 @app.route('/lookup_azimuth_altitude', methods=['POST'])
 def lookup_azimuth_altitude():
     """Endpoint that handles azimuth and altitude lookup for visualization"""
