@@ -490,7 +490,7 @@ function drawAzimuthLatticeOnCanvas() {
     const center = map.getCenter();
     
     // Set up canvas drawing style
-    ctx.strokeStyle = '#FF8C00'; // Sunset orange color
+    ctx.strokeStyle = '#000000'; // Neon green color
     ctx.lineWidth = 3; // Slightly thinner lines
     ctx.globalAlpha = 0.6; // More transparent
     ctx.setLineDash([10, 5]); // Longer dashes for better visibility

@@ -111,7 +111,6 @@ def get_road_bearing(lat, lon, dist=ROAD_SEARCH_RADIUS_M, network_type="drive"):
     # find the single closest edge to our point
     u, v, key = ox.distance.nearest_edges(G, X=lon, Y=lat)
 
-    print(G.nodes[u])
     # get the coordinates of both endpoints
     lat_1 = G.nodes[u]["y"]
     lon_1 = G.nodes[u]["x"]
@@ -195,8 +194,6 @@ def get_horizon_azimuth(
         tuple: (azimuth, exact_time)
     """
     try:
-        print(date.date())
-
         # Get sunset time for date/location
         # If date has a time zone (eg from server), convert to the target timezone.
         if date.tzinfo is not None:
