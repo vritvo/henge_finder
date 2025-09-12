@@ -577,14 +577,14 @@ function drawDirectionIndicatorOnCanvas(azimuth) {
     if (!map || !currentCityData) return;
     
     // Convert azimuth to radians, treating top of page as north
-    const azimuthRad = (azimuth * Math.PI) / 180;
+    const azimuthRad = ((azimuth - 90) * Math.PI) / 180;
     
     // Calculate the center of the canvas
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
     
     // Position the icon at a fixed distance from center in the azimuth direction
-    const iconDistance = 100; // pixels from center
+    const iconDistance = 350; // pixels from center
     const iconX = centerX + Math.cos(azimuthRad) * iconDistance;
     const iconY = centerY + Math.sin(azimuthRad) * iconDistance;
     
