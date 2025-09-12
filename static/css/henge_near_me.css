@@ -1,0 +1,211 @@
+/* Henge Near Me Page Styles */
+
+.city-input-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.city-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+
+.city-input:focus {
+    outline: none;
+    border-color: #DC816E;
+}
+
+.suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.suggestion-item {
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+    background-color: #f8f9fa;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.date-slider-container {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.date-display {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2A2B2A;
+    margin-bottom: 15px;
+}
+
+.date-slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: #ddd;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.date-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #DC816E;
+    cursor: pointer;
+}
+
+.date-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #DC816E;
+    cursor: pointer;
+    border: none;
+}
+
+.map-container-henge {
+    height: 500px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin: 20px 0;
+    position: relative;
+}
+
+.azimuth-info {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #DC816E;
+}
+
+.loading-henge {
+    text-align: center;
+    padding: 20px;
+    display: none;
+}
+
+.spinner-henge {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #DC816E;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #DC816E;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.time-toggle-container {
+    margin: 20px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.toggle-switch {
+    display: flex;
+    background: #e1e5e9;
+    border-radius: 25px;
+    padding: 4px;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.toggle-switch input[type="radio"] {
+    display: none;
+}
+
+.toggle-switch label {
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    color: #666;
+    background: transparent;
+}
+
+.toggle-switch input[type="radio"]:checked + label {
+    background: #DC816E;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Map loading overlay styles */
+.map-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    border-radius: 8px;
+}
+
+.map-loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #DC816E;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+.map-loading-text {
+    margin: 0;
+    color: #2A2B2A;
+    font-weight: 600;
+}

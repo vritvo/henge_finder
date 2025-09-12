@@ -1,8 +1,9 @@
 // Global variables
 let map = null;
 let currentCityData = null;
-let sunsetAnglesData = null;
+let sunAnglesData = null;
 let currentDayOfYear = 0;
+let currentTimeOfDay = 'sunset';
 let azimuthLattice = null;
 let canvas = null;
 let canvasOverlay = null;
@@ -198,12 +199,7 @@ const popularCities = [
 document.addEventListener('DOMContentLoaded', function() {
     initializeCityInput();
     initializeDateSlider();
-    
-    // Set today's date as default
-    const today = new Date();
-    currentDayOfYear = getDayOfYear(today);
-    document.getElementById('dateSlider').value = currentDayOfYear;
-    updateDateDisplay();
+    initializeTimeToggle();
 });
 
 // City input with typeahead functionality
@@ -256,27 +252,52 @@ function selectCity(cityName) {
     document.getElementById('cityInput').value = cityName;
     document.getElementById('suggestions').style.display = 'none';
     
-    // Load city data and sunset angles
+    // Load city data and sun angles
     loadCityData(cityName);
 }
 
-// Load city data and calculate sunset angles
-async function loadCityData(cityName) {
+// Time toggle functionality
+function initializeTimeToggle() {
+    const timeToggleInputs = document.querySelectorAll('input[name="timeOfDay"]');
+    
+    timeToggleInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.checked) {
+                currentTimeOfDay = this.value;
+                
+                // If we have a city loaded, reload the data with new time of day
+                if (currentCityData && currentCityData.address) {
+                    loadCityData(currentCityData.address, true); // true indicates this is a toggle change
+                }
+            }
+        });
+    });
+}
+
+// Load city data and calculate sun angles
+async function loadCityData(cityName, isToggleChange = false) {
     const loading = document.getElementById('loadingHenge');
     const mapAndControls = document.getElementById('mapAndControls');
     
-    loading.style.display = 'block';
-    mapAndControls.style.display = 'none';
+    if (isToggleChange) {
+        // For toggle changes, show overlay loading instead of hiding map
+        showMapLoadingOverlay();
+    } else {
+        // For initial city selection, hide map and show full loading
+        loading.style.display = 'block';
+        mapAndControls.style.display = 'none';
+    }
     
     try {
-        const response = await fetch('/lookup_sunset_angles', {
+        const response = await fetch('/lookup_sun_angles', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 address: cityName,
-                year: new Date().getFullYear()
+                year: new Date().getFullYear(),
+                time_of_day: currentTimeOfDay
             })
         });
         
@@ -284,7 +305,7 @@ async function loadCityData(cityName) {
         
         if (response.ok) {
             currentCityData = data;
-            sunsetAnglesData = data.sunset_angles;
+            sunAnglesData = data.sun_angles;
             
             // Clear canvas before initializing map for new city
             if (ctx && canvas) {
@@ -307,7 +328,11 @@ async function loadCityData(cityName) {
         console.error('Error:', error);
         alert('Network error. Please try again.');
     } finally {
-        loading.style.display = 'none';
+        if (isToggleChange) {
+            hideMapLoadingOverlay();
+        } else {
+            loading.style.display = 'none';
+        }
     }
 }
 
@@ -357,9 +382,7 @@ function initializeMap(lat, lon) {
                 // Draw initial azimuth lattice after map is properly sized
                 drawAzimuthLattice();
                 
-                // Add event listeners for map movement to update lattice
-                map.on('moveend', drawAzimuthLattice);
-                map.on('zoomend', drawAzimuthLattice);
+                // Lines will only be redrawn when new sun angles are loaded
             }
         }, 100);
         
@@ -372,12 +395,10 @@ function initializeMap(lat, lon) {
 function initializeDateSlider() {
     const dateSlider = document.getElementById('dateSlider');
     
-    // Set slider to today's date (0-based day of year)
+    // Set slider to today's date using the same calculation as getDayOfYear
     const today = new Date();
-    const startOfYear = new Date(today.getFullYear(), 0, 1);
-    const dayOfYear = Math.floor((today - startOfYear) / (1000 * 60 * 60 * 24));
-    currentDayOfYear = dayOfYear;
-    dateSlider.value = dayOfYear;
+    currentDayOfYear = getDayOfYear(today);
+    dateSlider.value = currentDayOfYear;
     
     // Update displays
     updateDateDisplay();
@@ -413,12 +434,12 @@ function updateDateDisplay() {
 }
 
 function updateAzimuthDisplay() {
-    if (!sunsetAnglesData || !sunsetAnglesData[currentDayOfYear]) {
+    if (!sunAnglesData || !sunAnglesData[currentDayOfYear]) {
         document.getElementById('azimuthValue').textContent = '-';
         return;
     }
     
-    const azimuth = sunsetAnglesData[currentDayOfYear].azimuth;
+    const azimuth = sunAnglesData[currentDayOfYear].azimuth;
     document.getElementById('azimuthValue').textContent = azimuth.toFixed(1);
 }
 
@@ -455,8 +476,6 @@ function createCanvasOverlay() {
     updateCanvasSize();
     
     // Add event listeners for map changes
-    map.on('moveend', updateCanvasSize);
-    map.on('zoomend', updateCanvasSize);
     map.on('resize', updateCanvasSize);
 }
 
@@ -474,104 +493,125 @@ function updateCanvasSize() {
 
 // Draw azimuth lattice on canvas
 function drawAzimuthLatticeOnCanvas() {
-    if (!map || !currentCityData || !sunsetAnglesData || !ctx) {
+    if (!map || !currentCityData || !sunAnglesData || !ctx) {
         return;
     }
     
-    if (!sunsetAnglesData[currentDayOfYear]) {
+    if (!sunAnglesData[currentDayOfYear]) {
         return;
     }
     
     // Clear the entire canvas first
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const azimuth = sunsetAnglesData[currentDayOfYear].azimuth;
-    const bounds = map.getBounds();
-    const center = map.getCenter();
+    const azimuth = sunAnglesData[currentDayOfYear].azimuth;
     
     // Set up canvas drawing style
-    ctx.strokeStyle = '#000000'; // Neon green color
-    ctx.lineWidth = 3; // Slightly thinner lines
-    ctx.globalAlpha = 0.6; // More transparent
-    ctx.setLineDash([10, 5]); // Longer dashes for better visibility
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.6;
+    ctx.setLineDash([10, 5]);
     
-    // Create a continuous lattice using parallel lines approach
-    // Calculate spacing based on zoom level - much larger spacing
-    const zoom = map.getZoom();
-    const baseSpacing = 0.1; // Much larger base spacing in degrees
-    const spacing = baseSpacing * Math.pow(2, 10 - zoom); // Adjust spacing based on zoom
+    // Draw exactly 7 parallel lines with the 4th line centered
+    drawSevenAzimuthLines(azimuth);
     
-    // Get map bounds and extend them for better coverage
-    const extendedBounds = {
-        north: bounds.getNorth() + spacing,
-        south: bounds.getSouth() - spacing,
-        east: bounds.getEast() + spacing,
-        west: bounds.getWest() - spacing
-    };
-    
-    // Create parallel lines across the entire visible area
-    drawParallelLines(extendedBounds, azimuth, spacing);
+    // Draw direction indicator
+    drawDirectionIndicatorOnCanvas(azimuth);
     
     // Reset canvas state
     ctx.setLineDash([]);
     ctx.globalAlpha = 1.0;
 }
 
-// Draw parallel lines across the map bounds
-function drawParallelLines(bounds, azimuth, spacing) {
-    // Calculate the perpendicular direction to the azimuth
-    const perpAzimuth = (azimuth + 90) % 360;
+// Draw exactly 7 azimuth lines with the 4th line centered
+function drawSevenAzimuthLines(azimuth) {
+    // Convert azimuth to radians, treating top of page as north (0°)
+    // Azimuth is measured clockwise from north
+    const azimuthRad = (azimuth * Math.PI) / 180;
     
-    // Calculate how many lines we need
-    const latRange = bounds.north - bounds.south;
-    const lonRange = bounds.east - bounds.west;
-    const diagonal = Math.sqrt(latRange * latRange + lonRange * lonRange);
-    const numLines = Math.ceil(diagonal / spacing) + 2;
+    // Calculate the center of the canvas
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
     
-    // Create lines perpendicular to the azimuth direction
-    for (let i = 0; i < numLines; i++) {
-        // Calculate a point along the perpendicular direction
-        const centerLat = (bounds.north + bounds.south) / 2;
-        const centerLon = (bounds.east + bounds.west) / 2;
+    // The lines should be perpendicular to the azimuth direction
+    // So we use the perpendicular angle for the line direction
+    const lineAngle = azimuthRad + Math.PI / 2;
+    
+    // Fixed spacing between lines (in pixels)
+    const lineSpacing = 80; // pixels between lines
+    
+    // Draw 7 lines with the 4th line (index 3) centered
+    for (let i = 0; i < 7; i++) {
+        // Calculate offset from center (4th line is at offset 0)
+        const offset = (i - 3) * lineSpacing;
         
-        // Offset the line position
-        const offset = (i - numLines / 2) * spacing;
-        const offsetPoint = turf.destination([centerLon, centerLat], offset * 111000, perpAzimuth, { units: 'meters' });
+        // Calculate the offset point from center in the azimuth direction
+        const offsetX = centerX + Math.cos(azimuthRad) * offset;
+        const offsetY = centerY + Math.sin(azimuthRad) * offset;
         
-        // Draw a long line through this point in the azimuth direction
-        drawLongLine(offsetPoint.geometry.coordinates[1], offsetPoint.geometry.coordinates[0], azimuth, bounds);
+        // Draw a line through this point perpendicular to the azimuth direction
+        drawLineAcrossCanvas(offsetX, offsetY, lineAngle);
     }
 }
 
-// Draw a long line through a point in the azimuth direction
-function drawLongLine(lat, lon, azimuth, bounds) {
-    // Calculate line length to cover the entire visible area
-    const latRange = bounds.north - bounds.south;
-    const lonRange = bounds.east - bounds.west;
-    const maxRange = Math.max(latRange, lonRange);
-    const lineLength = maxRange * 1.5; // Make line longer than needed
+// Draw a line across the canvas through a given point at a given angle
+function drawLineAcrossCanvas(centerX, centerY, angleRad) {
+    // Calculate line length to cover the entire canvas
+    const lineLength = Math.max(canvas.width, canvas.height) * 1.5;
     
-    // Calculate start and end points
-    const start = [lon, lat];
-    const end1 = turf.destination(start, lineLength * 111000, azimuth, { units: 'meters' });
-    const end2 = turf.destination(start, lineLength * 111000, (azimuth + 180) % 360, { units: 'meters' });
-    
-    // Convert to pixel coordinates
-    const startPoint = map.latLngToContainerPoint([lat, lon]);
-    const end1Point = map.latLngToContainerPoint([end1.geometry.coordinates[1], end1.geometry.coordinates[0]]);
-    const end2Point = map.latLngToContainerPoint([end2.geometry.coordinates[1], end2.geometry.coordinates[0]]);
+    // Calculate start and end points of the line
+    const startX = centerX - Math.cos(angleRad) * lineLength / 2;
+    const startY = centerY - Math.sin(angleRad) * lineLength / 2;
+    const endX = centerX + Math.cos(angleRad) * lineLength / 2;
+    const endY = centerY + Math.sin(angleRad) * lineLength / 2;
     
     // Draw the line
     ctx.beginPath();
-    ctx.moveTo(end2Point.x, end2Point.y);
-    ctx.lineTo(end1Point.x, end1Point.y);
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
     ctx.stroke();
+}
+
+// Draw direction indicator on canvas
+function drawDirectionIndicatorOnCanvas(azimuth) {
+    if (!map || !currentCityData) return;
+    
+    // Convert azimuth to radians, treating top of page as north
+    const azimuthRad = (azimuth * Math.PI) / 180;
+    
+    // Calculate the center of the canvas
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    // Position the icon at a fixed distance from center in the azimuth direction
+    const iconDistance = 100; // pixels from center
+    const iconX = centerX + Math.cos(azimuthRad) * iconDistance;
+    const iconY = centerY + Math.sin(azimuthRad) * iconDistance;
+    
+    // Draw the icon
+    ctx.save();
+    ctx.globalAlpha = 1.0;
+    ctx.fillStyle = '#DC816E';
+    ctx.strokeStyle = '#DC816E';
+    ctx.lineWidth = 2;
+    
+    const iconSize = 12;
+    
+    if (currentTimeOfDay === 'sunrise') {
+        // Draw sunrise icon (sun with rays)
+        drawSunriseIcon(iconX, iconY, iconSize);
+    } else {
+        // Draw sunset icon (sun without rays, or different style)
+        drawSunsetIcon(iconX, iconY, iconSize);
+    }
+    
+    ctx.restore();
 }
 
 
 // Draw azimuth lattice overlay on the map (now just triggers canvas redraw)
 function drawAzimuthLattice() {
-    if (!map || !currentCityData || !sunsetAnglesData || !sunsetAnglesData[currentDayOfYear]) {
+    if (!map || !currentCityData || !sunAnglesData || !sunAnglesData[currentDayOfYear]) {
         return;
     }
     
@@ -587,7 +627,7 @@ function drawAzimuthLattice() {
 
 // Utility functions
 function getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
+    const start = new Date(date.getFullYear(), 0, 1); // January 1st
     const diff = date - start;
     const oneDay = 1000 * 60 * 60 * 24;
     return Math.floor(diff / oneDay);
@@ -598,4 +638,105 @@ function getDateFromDayOfYear(dayOfYear) {
     const date = new Date(year, 0, 1); // January 1st
     date.setDate(date.getDate() + dayOfYear); // Add the day of year to January 1st
     return date;
+}
+
+// Map loading overlay functions
+function showMapLoadingOverlay() {
+    const overlay = document.getElementById('mapLoadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+}
+
+function hideMapLoadingOverlay() {
+    const overlay = document.getElementById('mapLoadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+
+
+// Draw sunrise icon (sun with rays and directional pointer)
+function drawSunriseIcon(x, y, size) {
+    // Draw the main circle
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Draw rays
+    const rayLength = size * 1.5;
+    const numRays = 8;
+    for (let i = 0; i < numRays; i++) {
+        const angle = (i * 2 * Math.PI) / numRays;
+        const startX = x + Math.cos(angle) * size;
+        const startY = y + Math.sin(angle) * size;
+        const endX = x + Math.cos(angle) * rayLength;
+        const endY = y + Math.sin(angle) * rayLength;
+        
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+    }
+    
+    // Draw directional pointer in the azimuth direction
+    const azimuth = sunAnglesData[currentDayOfYear].azimuth;
+    const pointerAngle = (azimuth * Math.PI) / 180;
+    const pointerLength = size * 1.2;
+    
+    // Calculate pointer tip position
+    const tipX = x + Math.cos(pointerAngle) * pointerLength;
+    const tipY = y + Math.sin(pointerAngle) * pointerLength;
+    
+    // Draw triangular pointer
+    const pointerWidth = size * 0.3;
+    const baseX1 = x + Math.cos(pointerAngle - Math.PI/2) * pointerWidth;
+    const baseY1 = y + Math.sin(pointerAngle - Math.PI/2) * pointerWidth;
+    const baseX2 = x + Math.cos(pointerAngle + Math.PI/2) * pointerWidth;
+    const baseY2 = y + Math.sin(pointerAngle + Math.PI/2) * pointerWidth;
+    
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(baseX1, baseY1);
+    ctx.lineTo(baseX2, baseY2);
+    ctx.closePath();
+    ctx.fill();
+}
+
+// Draw sunset icon (sun with directional pointer)
+function drawSunsetIcon(x, y, size) {
+    // Draw the main circle
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Draw inner circle
+    ctx.beginPath();
+    ctx.arc(x, y, size * 0.7, 0, 2 * Math.PI);
+    ctx.stroke();
+    
+    // Draw directional pointer in the azimuth direction
+    // The pointer should point in the direction of the sun's movement
+    const azimuth = sunAnglesData[currentDayOfYear].azimuth;
+    const pointerAngle = (azimuth * Math.PI) / 180;
+    const pointerLength = size * 1.2;
+    
+    // Calculate pointer tip position
+    const tipX = x + Math.cos(pointerAngle) * pointerLength;
+    const tipY = y + Math.sin(pointerAngle) * pointerLength;
+    
+    // Draw triangular pointer
+    const pointerWidth = size * 0.3;
+    const baseX1 = x + Math.cos(pointerAngle - Math.PI/2) * pointerWidth;
+    const baseY1 = y + Math.sin(pointerAngle - Math.PI/2) * pointerWidth;
+    const baseX2 = x + Math.cos(pointerAngle + Math.PI/2) * pointerWidth;
+    const baseY2 = y + Math.sin(pointerAngle + Math.PI/2) * pointerWidth;
+    
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(baseX1, baseY1);
+    ctx.lineTo(baseX2, baseY2);
+    ctx.closePath();
+    ctx.fill();
 }

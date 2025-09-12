@@ -4,7 +4,7 @@ import datetime
 from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
 import traceback
 from astral import Observer, sun
-from sunset_calculator import calculate_sunset_azimuths_for_year
+from sunset_calculator import calculate_sun_azimuths_for_year
 from zoneinfo import ZoneInfo
 
 
@@ -135,16 +135,21 @@ def lookup_address():
         }), 500
 
 
-@app.route('/lookup_sunset_angles', methods=['POST'])
-def lookup_sunset_angles():
+@app.route('/lookup_sun_angles', methods=['POST'])
+def lookup_sun_angles():
     """Endpoint that calculates sun azimuth for every day of the year at a given location"""
     try:
         data = request.get_json()
         address = data.get('address')
         year = data.get('year')  # Optional year, defaults to current year
+        time_of_day = data.get('time_of_day', 'sunrise')  # Default to sunrise if not provided
         
         if not address:
-            return jsonify({'error': 'Please enter an address to calculate sunset angles.'}), 400
+            return jsonify({'error': 'Please enter an address to calculate sun angles.'}), 400
+
+        # Validate time_of_day parameter
+        if time_of_day not in ['sunrise', 'sunset']:
+            return jsonify({'error': 'time_of_day must be either "sunrise" or "sunset"'}), 400
 
         # Get coordinates and standardized address
         try:
@@ -166,30 +171,31 @@ def lookup_sunset_angles():
             print(f"Unexpected error getting coordinates: {e}")
             return jsonify({'error': f'Error processing address: {str(e)}'}), 400
 
-        # Calculate sunset angles with henge detection
+        # Calculate sun angles with henge detection
         try:
             target_altitude_deg = 0.5
-            result = calculate_sunset_azimuths_for_year(lat, lon, year, target_altitude_deg)
+            result = calculate_sun_azimuths_for_year(lat, lon, year, target_altitude_deg, time_of_day)
             
             # Add address and coordinate info to response
             response_data = {
                 'address': standardized_address,
                 'coordinates': {'lat': lat, 'lon': lon},
                 'year': year if year else datetime.now(ZoneInfo("UTC")).year,
-                'sunset_angles': result
+                'time_of_day': time_of_day,
+                'sun_angles': result
             }
             
             return jsonify(response_data)
             
         except Exception as e:
-            print(f"Error calculating sunset angles: {e}")
+            print(f"Error calculating sun angles: {e}")
             traceback.print_exc()
             return jsonify({
-                'error': 'An error occurred while calculating sunset angles. Please try again.'
+                'error': f'An error occurred while calculating {time_of_day} angles. Please try again.'
             }), 500
             
     except Exception as e:
-        print(f"Unexpected error in lookup_sunset_angles: {e}")
+        print(f"Unexpected error in lookup_sun_angles: {e}")
         traceback.print_exc()
         return jsonify({
             'error': 'An unexpected error occurred while processing your request. Please try again or contact support if the problem persists.'

@@ -8,148 +8,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <style>
-        .city-input-container {
-            position: relative;
-            margin-bottom: 20px;
-        }
-        
-        .city-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.2s;
-        }
-        
-        .city-input:focus {
-            outline: none;
-            border-color: #DC816E;
-        }
-        
-        .suggestions-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #e1e5e9;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        
-        .suggestion-item {
-            padding: 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-            transition: background-color 0.2s;
-        }
-        
-        .suggestion-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-        
-        .date-slider-container {
-            margin: 20px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .date-display {
-            text-align: center;
-            font-size: 18px;
-            font-weight: 600;
-            color: #2A2B2A;
-            margin-bottom: 15px;
-        }
-        
-        .date-slider {
-            width: 100%;
-            height: 8px;
-            border-radius: 4px;
-            background: #ddd;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        .date-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #DC816E;
-            cursor: pointer;
-        }
-        
-        .date-slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #DC816E;
-            cursor: pointer;
-            border: none;
-        }
-        
-        .map-container-henge {
-            height: 500px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            margin: 20px 0;
-        }
-        
-        .azimuth-info {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #DC816E;
-        }
-        
-        .loading-henge {
-            text-align: center;
-            padding: 20px;
-            display: none;
-        }
-        
-        .spinner-henge {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #DC816E;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #DC816E;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/henge_near_me.css') }}">
 </head>
 <body>
     <div class="container">
@@ -168,7 +27,7 @@
         
         <div class="loading-henge" id="loadingHenge">
             <div class="spinner-henge"></div>
-            <p>Loading city data and calculating sunset angles...</p>
+            <p>Loading city data and calculating sun angles...</p>
         </div>
         
         <div id="mapAndControls" style="display: none;">
@@ -183,8 +42,22 @@
                 </div>
             </div>
             
+            <div class="time-toggle-container">
+                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 3: Choose Time of Day</h3>
+                <div class="toggle-switch">
+                    <input type="radio" id="sunrise" name="timeOfDay" value="sunrise">
+                    <label for="sunrise">Sunrise</label>
+                    <input type="radio" id="sunset" name="timeOfDay" value="sunset" checked>
+                    <label for="sunset">Sunset</label>
+                </div>
+            </div>
+            
             <div class="map-container-henge">
                 <div id="hengeMap" style="height: 500px; width: 100%;"></div>
+                <div id="mapLoadingOverlay" class="map-loading-overlay">
+                    <div class="map-loading-spinner"></div>
+                    <p class="map-loading-text">Loading sun angles...</p>
+                </div>
             </div>
             
             <div class="azimuth-info" id="azimuthInfo">
@@ -194,17 +67,6 @@
             </div>
         </div>
     </div>
-    
-    <script>
-        // Simple test to ensure Leaflet is loaded
-        window.addEventListener('load', function() {
-            console.log('Page fully loaded');
-            console.log('Leaflet L object:', typeof L !== 'undefined' ? 'Available' : 'Not available');
-            if (typeof L !== 'undefined') {
-                console.log('Leaflet version:', L.version);
-            }
-        });
-    </script>
     <script src="{{ url_for('static', filename='js/henge_near_me.js') }}" defer></script>
 </body>
 </html>

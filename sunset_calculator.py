@@ -6,11 +6,12 @@ from utils import get_horizon_azimuth, get_timezone_from_coordinates
 from config import MATCH_THRESHOLD_DEG
 
 
-def calculate_sunset_azimuths_for_year(
+def calculate_sun_azimuths_for_year(
     lat: float, 
     lon: float, 
     year: int = None,
     target_altitude_deg: float = 0.5,
+    time_of_day: str = "sunset",
 ) -> Dict[int, Dict[str, Any]]:
     """
     Calculate sun azimuth at target altitude for every day of the year.
@@ -20,6 +21,7 @@ def calculate_sunset_azimuths_for_year(
         lon: Longitude in degrees  
         year: Year to calculate for (default: current year)
         target_altitude_deg: Sun altitude in degrees (default: 0.5)
+        time_of_day: Either "sunrise" or "sunset" (default: "sunset")
         
     Returns:
         Dictionary with day-of-year (0-364) as keys and dictionaries with 'date' and 'azimuth' as values
@@ -49,7 +51,7 @@ def calculate_sunset_azimuths_for_year(
         try:
             # Use the existing get_horizon_azimuth function from utils.py
             azimuth, exact_time = get_horizon_azimuth(
-                tz, obs, current_date, target_altitude_deg
+                tz, obs, current_date, target_altitude_deg, time_of_day=time_of_day
             )
             
             if azimuth is not None and exact_time is not None:
