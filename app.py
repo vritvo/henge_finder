@@ -141,7 +141,7 @@ def lookup_sun_angles():
     try:
         data = request.get_json()
         address = data.get('address')
-        year = data.get('year')  # Optional year, defaults to current year
+        start_date = data.get('start_date')  # Optional start date in YYYY-MM-DD format
         time_of_day = data.get('time_of_day', 'sunrise')  # Default to sunrise if not provided
         
         if not address:
@@ -171,16 +171,31 @@ def lookup_sun_angles():
             print(f"Unexpected error getting coordinates: {e}")
             return jsonify({'error': f'Error processing address: {str(e)}'}), 400
 
+        # Parse start date if provided, otherwise use January 1 of current year
+        if start_date:
+            try:
+                start_date_obj = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid start date format. Use YYYY-MM-DD format.'}), 400
+        else:
+            # Default to January 1 of current year
+            current_year = datetime.now(ZoneInfo("UTC")).year
+            start_date_obj = datetime(current_year, 1, 1).date()
+
+        # Calculate end date (one year later)
+        end_date_obj = datetime.datetime(start_date_obj.year + 1, start_date_obj.month, start_date_obj.day).date()
+
         # Calculate sun angles with henge detection
         try:
             target_altitude_deg = 0.5
-            result = calculate_sun_azimuths_for_year(lat, lon, year, target_altitude_deg, time_of_day)
+            result = calculate_sun_azimuths_for_year(lat, lon, start_date=start_date_obj, target_altitude_deg=target_altitude_deg, time_of_day=time_of_day)
             
             # Add address and coordinate info to response
             response_data = {
                 'address': standardized_address,
                 'coordinates': {'lat': lat, 'lon': lon},
-                'year': year if year else datetime.now(ZoneInfo("UTC")).year,
+                'start_date': start_date_obj.isoformat(),
+                'end_date': end_date_obj.isoformat(),
                 'time_of_day': time_of_day,
                 'sun_angles': result
             }

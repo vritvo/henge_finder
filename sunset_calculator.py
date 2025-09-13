@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from astral import Observer, sun
 from typing import Dict, Any
 from zoneinfo import ZoneInfo
@@ -10,6 +10,7 @@ def calculate_sun_azimuths_for_year(
     lat: float, 
     lon: float, 
     year: int = None,
+    start_date: date = None,
     target_altitude_deg: float = 0.5,
     time_of_day: str = "sunset",
 ) -> Dict[int, Dict[str, Any]]:
@@ -19,12 +20,12 @@ def calculate_sun_azimuths_for_year(
     Args:
         lat: Latitude in degrees
         lon: Longitude in degrees  
-        year: Year to calculate for (default: current year)
+        start_date: Start date for calculations (default: January 1 of specified year)
         target_altitude_deg: Sun altitude in degrees (default: 0.5)
         time_of_day: Either "sunrise" or "sunset" (default: "sunset")
         
     Returns:
-        Dictionary with day-of-year (0-364) as keys and dictionaries with 'date' and 'azimuth' as values
+        Dictionary with day index (0-based) as keys and dictionaries with 'date' and 'azimuth' as values
     """
     # Round coordinates to 3 decimal places
     lat = round(lat, 3)
@@ -36,17 +37,19 @@ def calculate_sun_azimuths_for_year(
     # Get timezone for the location (needed for astral library)
     tz = get_timezone_from_coordinates(lat, lon)
     
-    # Use the specified year or current year
-    if year is None:
+    # Determine the start date
+    if start_date is not None:
+        # Use the provided start date
+        start_datetime = datetime.combine(start_date, datetime.min.time(), tzinfo=tz)
+    else:
+        # Start with January 1st of the current year
         year = datetime.now(ZoneInfo("UTC")).year
-    
-    # Start with January 1st of the specified year
-    start_date = datetime(year, 1, 1, tzinfo=tz)
+        start_datetime = datetime(year, 1, 1, tzinfo=tz)
     
     results = {}
     
-    for day_of_year in range(365):  # Calculate for all 365 days of the year
-        current_date = start_date + timedelta(days=day_of_year)
+    for day_index in range(365):  # Calculate for all 365 days of the year
+        current_date = start_datetime + timedelta(days=day_index)
         
         try:
             # Use the existing get_horizon_azimuth function from utils.py
@@ -58,8 +61,8 @@ def calculate_sun_azimuths_for_year(
                 # Convert to UTC for consistent results
                 exact_time_utc = exact_time.astimezone(ZoneInfo("UTC"))
                 
-                # Store by day-of-year index (0-364)
-                results[day_of_year] = {
+                # Store by day index (0-based)
+                results[day_index] = {
                     'date': exact_time_utc.isoformat(),
                     'azimuth': round(azimuth, 2)
                 }
@@ -72,3 +75,4 @@ def calculate_sun_azimuths_for_year(
             continue
     
     return results
+

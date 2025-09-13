@@ -8,6 +8,8 @@ let azimuthLattice = null;
 let canvas = null;
 let canvasOverlay = null;
 let ctx = null;
+let startDate = null; // The starting date for the year's worth of data
+let endDate = null;   // The ending date for the year's worth of data
 
 // Popular cities for typeahead suggestions
 const popularCities = [
@@ -289,6 +291,7 @@ async function loadCityData(cityName, isToggleChange = false) {
     }
     
     try {
+        const today = new Date();
         const response = await fetch('/lookup_sun_angles', {
             method: 'POST',
             headers: {
@@ -296,7 +299,7 @@ async function loadCityData(cityName, isToggleChange = false) {
             },
             body: JSON.stringify({
                 address: cityName,
-                year: new Date().getFullYear(),
+                start_date: today.toISOString().split('T')[0], // YYYY-MM-DD format
                 time_of_day: currentTimeOfDay
             })
         });
@@ -306,6 +309,16 @@ async function loadCityData(cityName, isToggleChange = false) {
         if (response.ok) {
             currentCityData = data;
             sunAnglesData = data.sun_angles;
+            
+            // Set the date range for the slider
+            startDate = new Date(data.start_date);
+            endDate = new Date(data.end_date);
+            
+            // Set current day to 0 (first day of the range)
+            currentDayOfYear = 0;
+            
+            // Update the date slider range
+            updateDateSliderRange();
             
             // Clear canvas before initializing map for new city
             if (ctx && canvas) {
@@ -395,9 +408,8 @@ function initializeMap(lat, lon) {
 function initializeDateSlider() {
     const dateSlider = document.getElementById('dateSlider');
     
-    // Set slider to today's date using the same calculation as getDayOfYear
-    const today = new Date();
-    currentDayOfYear = getDayOfYear(today);
+    // Set slider to 0 (first day of the range)
+    currentDayOfYear = 0;
     dateSlider.value = currentDayOfYear;
     
     // Update displays
@@ -417,9 +429,44 @@ function initializeDateSlider() {
     });
 }
 
+function updateDateSliderRange() {
+    if (!startDate || !endDate) return;
+    
+    const dateSlider = document.getElementById('dateSlider');
+    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    
+    // Update slider attributes
+    dateSlider.min = 0;
+    dateSlider.max = daysDiff - 1;
+    dateSlider.value = currentDayOfYear;
+    
+    // Update the date range labels
+    const dateSliderContainer = document.querySelector('.date-slider-container');
+    const startLabel = dateSliderContainer ? dateSliderContainer.querySelector('div[style*="justify-content: space-between"]') : null;
+    if (startLabel) {
+        const startMonth = startDate.toLocaleDateString('en-US', { month: 'short' });
+        const startDay = startDate.getDate();
+        const endMonth = endDate.toLocaleDateString('en-US', { month: 'short' });
+        const endDay = endDate.getDate();
+        const endYear = endDate.getFullYear();
+        
+        startLabel.innerHTML = `
+            <span>${startMonth} ${startDay}</span>
+            <span>Day of Year</span>
+            <span>${endMonth} ${endDay}, ${endYear}</span>
+        `;
+    }
+}
+
 function updateDateDisplay() {
     const dateDisplay = document.getElementById('dateDisplay');
     const selectedDate = document.getElementById('selectedDate');
+    
+    if (!startDate) {
+        dateDisplay.textContent = 'Select a city first';
+        selectedDate.textContent = '-';
+        return;
+    }
     
     const date = getDateFromDayOfYear(currentDayOfYear);
     const formattedDate = date.toLocaleDateString('en-US', {
@@ -634,9 +681,12 @@ function getDayOfYear(date) {
 }
 
 function getDateFromDayOfYear(dayOfYear) {
-    const year = new Date().getFullYear();
-    const date = new Date(year, 0, 1); // January 1st
-    date.setDate(date.getDate() + dayOfYear); // Add the day of year to January 1st
+    if (!startDate) {
+        return new Date(); // Fallback to today if no start date
+    }
+    
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + dayOfYear); // Add the day offset to start date
     return date;
 }
 
@@ -654,8 +704,6 @@ function hideMapLoadingOverlay() {
         overlay.style.display = 'none';
     }
 }
-
-
 
 // Draw sunrise icon (sun with rays and directional pointer)
 function drawSunriseIcon(x, y, size) {
