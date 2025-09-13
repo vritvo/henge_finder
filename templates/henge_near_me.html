@@ -32,7 +32,7 @@
         
         <div id="mapAndControls" style="display: none;">
             <div class="date-slider-container">
-                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 2: Select a Date</h3>
+                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 2: Select a Date and Time of Day</h3>
                 <div class="date-display" id="dateDisplay">Today</div>
                 <input type="range" id="dateSlider" class="date-slider" min="0" max="364" value="0">
                 <div style="display: flex; justify-content: space-between; color: #666; font-size: 14px; margin-top: 5px;">
@@ -40,10 +40,6 @@
                     <span>Day of Year</span>
                     <span>Dec 31</span>
                 </div>
-            </div>
-            
-            <div class="time-toggle-container">
-                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 3: Choose Time of Day</h3>
                 <div class="toggle-switch">
                     <input type="radio" id="sunrise" name="timeOfDay" value="sunrise">
                     <label for="sunrise">Sunrise</label>
@@ -51,7 +47,6 @@
                     <label for="sunset">Sunset</label>
                 </div>
             </div>
-            
             <div class="map-container-henge">
                 <div id="hengeMap" style="height: 500px; width: 100%;"></div>
                 <div id="mapLoadingOverlay" class="map-loading-overlay">

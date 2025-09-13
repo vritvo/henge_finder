@@ -584,7 +584,7 @@ function drawDirectionIndicatorOnCanvas(azimuth) {
     const centerY = canvas.height / 2;
     
     // Position the icon at a fixed distance from center in the azimuth direction
-    const iconDistance = 350; // pixels from center
+    const iconDistance = 330; // pixels from center
     const iconX = centerX + Math.cos(azimuthRad) * iconDistance;
     const iconY = centerY + Math.sin(azimuthRad) * iconDistance;
     
@@ -595,7 +595,7 @@ function drawDirectionIndicatorOnCanvas(azimuth) {
     ctx.strokeStyle = '#DC816E';
     ctx.lineWidth = 2;
     
-    const iconSize = 12;
+    const iconSize = 20;
     
     if (currentTimeOfDay === 'sunrise') {
         // Draw sunrise icon (sun with rays)

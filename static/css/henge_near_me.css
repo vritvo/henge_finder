@@ -155,7 +155,9 @@
     border-radius: 25px;
     padding: 4px;
     width: fit-content;
-    margin: 0 auto;
+    margin-top: 15px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .toggle-switch input[type="radio"] {
@@ -170,6 +172,7 @@
     font-weight: 600;
     color: #666;
     background: transparent;
+    margin-bottom: 0;
 }
 
 .toggle-switch input[type="radio"]:checked + label {
