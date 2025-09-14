@@ -11,6 +11,10 @@ let ctx = null;
 let startDate = null; // The starting date for the year's worth of data
 let endDate = null;   // The ending date for the year's worth of data
 
+// Road filtering variables
+let roadFilterEnabled = true;
+let streetHighlightLayer = null;
+
 // Popular cities for typeahead suggestions
 const popularCities = [
     "New York, NY, USA",
@@ -325,8 +329,18 @@ async function loadCityData(cityName, isToggleChange = false) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
             
+            // Clean up existing road filter
+            if (typeof RoadFilter !== 'undefined') {
+                RoadFilter.cleanup();
+            }
+            
             // Initialize map
             initializeMap(data.coordinates.lat, data.coordinates.lon);
+            
+            // Initialize road filtering
+            if (typeof RoadFilter !== 'undefined') {
+                RoadFilter.initializeForCity(data.coordinates, sunAnglesData);
+            }
             
             // Show controls
             mapAndControls.style.display = 'block';
@@ -488,6 +502,11 @@ function updateAzimuthDisplay() {
     
     const azimuth = sunAnglesData[currentDayOfYear].azimuth;
     document.getElementById('azimuthValue').textContent = azimuth.toFixed(1);
+    
+    // Update road highlights for current azimuth
+    if (typeof RoadFilter !== 'undefined') {
+        RoadFilter.updateHighlightsForAzimuth(azimuth);
+    }
 }
 
 // Create canvas overlay for drawing azimuth lines
@@ -522,8 +541,14 @@ function createCanvasOverlay() {
     // Update canvas size
     updateCanvasSize();
     
-    // Add event listeners for map changes
-    map.on('resize', updateCanvasSize);
+        // Add event listeners for map changes
+        map.on('resize', updateCanvasSize);
+        
+        // Add road filter event listeners
+        if (typeof RoadFilter !== 'undefined') {
+            map.on('moveend', RoadFilter.debounceMapUpdate);
+            map.on('zoomend', RoadFilter.debounceMapUpdate);
+        }
 }
 
 // Update canvas size to match map container
@@ -564,6 +589,11 @@ function drawAzimuthLatticeOnCanvas() {
     
     // Draw direction indicator
     drawDirectionIndicatorOnCanvas(azimuth);
+    
+    // Update road highlights for current azimuth
+    if (typeof RoadFilter !== 'undefined') {
+        RoadFilter.updateHighlightsForAzimuth(azimuth);
+    }
     
     // Reset canvas state
     ctx.setLineDash([]);

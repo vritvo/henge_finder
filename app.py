@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from hengefinder import search_for_henge
 import datetime
 from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
@@ -6,6 +6,7 @@ import traceback
 from astral import Observer, sun
 from sunset_calculator import calculate_sun_azimuths_for_year
 from zoneinfo import ZoneInfo
+import os
 
 
 app = Flask(__name__)
@@ -27,6 +28,12 @@ def index():
 @app.route('/henge_near_me')
 def henge_near_me():
     return render_template('henge_near_me.html')
+
+@app.route('/static/data/cities/<filename>')
+def serve_city_data(filename):
+    """Serve preprocessed city data files"""
+    data_dir = os.path.join(app.root_path, 'data', 'cities')
+    return send_from_directory(data_dir, filename)
 
 @app.route('/lookup_azimuth_altitude', methods=['POST'])
 def lookup_azimuth_altitude():

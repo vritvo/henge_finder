@@ -1,0 +1,180 @@
+/* Road Filter Controls Styling */
+
+.road-controls {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #5E4955;
+}
+
+.control-group input[type="range"] {
+    width: 100%;
+    margin: 5px 0;
+    height: 6px;
+    border-radius: 3px;
+    background: #ddd;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.control-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #DC816E;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.control-group input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #DC816E;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.control-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 14px;
+    color: #5E4955;
+}
+
+.control-group select:focus {
+    outline: none;
+    border-color: #DC816E;
+    box-shadow: 0 0 0 2px rgba(220, 129, 110, 0.2);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+    color: #5E4955;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+    accent-color: #DC816E;
+}
+
+.road-stats {
+    background: #e9ecef;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #6c757d;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+.road-stats span {
+    font-weight: 600;
+    color: #DC816E;
+}
+
+/* Street highlight styles */
+.street-highlight {
+    transition: opacity 0.3s ease;
+}
+
+.street-highlight:hover {
+    opacity: 1 !important;
+    stroke-width: 6 !important;
+}
+
+/* Loading state for road controls */
+.road-controls.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.road-controls.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #DC816E;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .road-controls {
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .control-group {
+        margin-bottom: 12px;
+    }
+    
+    .control-group label {
+        font-size: 14px;
+    }
+    
+    .road-stats {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+
+/* Animation for value updates */
+.value-update {
+    animation: valueUpdate 0.3s ease;
+}
+
+@keyframes valueUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Error state styling */
+.road-controls.error {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.road-controls.error .control-group label {
+    color: #721c24;
+}
+
+/* Success state styling */
+.road-controls.success {
+    border-color: #28a745;
+    background-color: #d4edda;
+}
+
+.road-controls.success .control-group label {
+    color: #155724;
+}

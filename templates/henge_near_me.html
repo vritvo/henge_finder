@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/henge_near_me.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/road_filter.css') }}">
 </head>
 <body>
     <div class="container">
@@ -60,6 +61,7 @@
                 </div>
             </div>
             
+            
             <div class="azimuth-info" id="azimuthInfo">
                 <strong>Sun Azimuth:</strong> <span id="azimuthValue">-</span>° from North
                 <br>
@@ -67,6 +69,7 @@
             </div>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/road_filter.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/henge_near_me.js') }}" defer></script>
 </body>
 </html>
