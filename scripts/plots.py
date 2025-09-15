@@ -25,7 +25,6 @@ def plot_azimuth_over_year(address, num_days=365, start_date=None):
     dates = [datetime.fromisoformat(item['date']) for item in azimuths_for_year]
     azimuths = [item['azimuth'] for item in azimuths_for_year]
     
-    # Rest of plotting code...
     tz = get_timezone_from_coordinates(lat, lon)
     obs = Observer(lat, lon)
     road_angle = get_road_bearing(lat, lon)

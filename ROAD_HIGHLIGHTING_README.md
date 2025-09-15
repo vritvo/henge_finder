@@ -10,7 +10,7 @@ The road highlighting feature allows users to visualize streets that align with 
 - **Street Highlighting**: Automatically highlights streets that align with the sun's azimuth within a configurable tolerance
 - **Real-time Updates**: Street highlights update automatically as you change the date or time of day
 - **Interactive Controls**: Adjustable alignment tolerance, minimum street length, and road type filters
-- **Performance Optimized**: Uses preprocessed data for major cities with fallback to Overpass API
+- **Performance Optimized**: Uses cached data with fallback to Overpass API
 
 ### User Controls
 - **Enable/Disable**: Toggle street highlighting on/off
@@ -19,9 +19,9 @@ The road highlighting feature allows users to visualize streets that align with 
 - **Road Types**: Select which types of roads to include (Primary, Secondary, Tertiary, Residential, Trunk)
 
 ### Data Management
-- **Preprocessed Data**: Top 100 US cities have preprocessed street data for fast loading
+- **Cached Data**: Street data is cached in browser localStorage for fast loading
 - **Caching**: Street data is cached in browser localStorage for 7 days
-- **API Fallback**: Falls back to Overpass API for cities without preprocessed data
+- **API Fallback**: Falls back to Overpass API for cities without cached data
 
 ## Technical Implementation
 
@@ -30,13 +30,10 @@ The road highlighting feature allows users to visualize streets that align with 
 #### New Files
 - `static/js/road_filter.js` - Core road filtering logic
 - `static/css/road_filter.css` - Styling for road controls
-- `scripts/preprocess_cities.py` - Data preprocessing script
-- `data/cities/` - Directory for preprocessed city data
 
 #### Modified Files
 - `templates/henge_near_me.html` - Added road highlighting UI controls
 - `static/js/henge_near_me.js` - Integrated road filtering with map events
-- `app.py` - Added route to serve preprocessed city data
 
 ### Architecture
 
@@ -63,7 +60,7 @@ const RoadFilter = {
 
 #### Data Flow
 1. **City Selection**: When a city is selected, `RoadFilter.initializeForCity()` is called
-2. **Data Loading**: Tries to load preprocessed data first, then cached data, then Overpass API
+2. **Data Loading**: Tries to load cached data first, then Overpass API
 3. **Filtering**: Streets are filtered by azimuth range, length, type, and map bounds
 4. **Visualization**: Filtered streets are highlighted on the map using Leaflet polylines
 
@@ -71,7 +68,7 @@ const RoadFilter = {
 - **Debouncing**: Map interactions are debounced to prevent excessive API calls
 - **Bounds Filtering**: Only processes streets visible in the current map view
 - **Street Limiting**: Limits to 1000 streets maximum for performance
-- **Caching**: Multiple levels of caching (preprocessed, localStorage, API)
+- **Caching**: localStorage caching for improved performance
 
 ## Usage
 
@@ -87,16 +84,6 @@ const RoadFilter = {
 
 ### For Developers
 
-#### Preprocessing City Data
-To add preprocessed data for a new city:
-
-```bash
-# Process a single city
-python scripts/preprocess_cities.py "City Name, State, USA"
-
-# Process all top 100 cities (takes several hours)
-python scripts/preprocess_cities.py
-```
 
 #### Adding New Road Types
 To include additional road types, modify the `roadTypes` array in `road_filter.js`:
@@ -173,7 +160,7 @@ The system includes comprehensive error handling:
 
 Potential improvements for future versions:
 
-1. **More Cities**: Expand preprocessed data to international cities
+1. **More Cities**: Improve caching for international cities
 2. **Advanced Filtering**: Add filters for street width, traffic volume, etc.
 3. **Street Clustering**: Group nearby aligned streets for better visualization
 4. **Export Functionality**: Allow users to export highlighted street data
@@ -185,7 +172,7 @@ Potential improvements for future versions:
 ### Common Issues
 
 1. **No Streets Highlighted**: Check if alignment tolerance is too strict or if no streets meet the length/type criteria
-2. **Slow Loading**: Large cities may take time to load; consider using preprocessed data
+2. **Slow Loading**: Large cities may take time to load; data is cached for faster subsequent loads
 3. **Missing Streets**: Some areas may have incomplete OpenStreetMap data
 4. **Performance Issues**: Reduce the number of visible streets by increasing minimum length or limiting road types
 

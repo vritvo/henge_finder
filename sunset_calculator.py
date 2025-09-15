@@ -9,7 +9,6 @@ from config import MATCH_THRESHOLD_DEG
 def calculate_sun_azimuths_for_year(
     lat: float, 
     lon: float, 
-    year: int = None,
     start_date: date = None,
     target_altitude_deg: float = 0.5,
     time_of_day: str = "sunset",

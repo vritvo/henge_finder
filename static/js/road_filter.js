@@ -15,7 +15,7 @@ const RoadFilter = {
     config: {
         minStreetLength: 200, // meters
         maxStreetLength: 10000, // meters
-        alignmentTolerance: 1, // degrees
+        alignmentTolerance: .5, // degrees
         debounceDelay: 300, // milliseconds
         roadTypes: ['primary', 'secondary', 'tertiary', 'residential', 'trunk', 'motorway', 'unclassified', 'service'],
         overpassUrl: 'https://overpass-api.de/api/interpreter'
@@ -42,43 +42,21 @@ const RoadFilter = {
         };
     },
     
-    // Load street data (try preprocessed first, then cached, then Overpass API)
+    // Load street data (try cached first, then Overpass API)
     loadStreetData: function() {
         const cityName = this.getCurrentCityName();
         
-        // Try to load preprocessed data first
-        this.loadPreprocessedData(cityName).then(preprocessedData => {
-            if (preprocessedData) {
-                console.log('Using preprocessed street data for', cityName);
-                this.streetData = preprocessedData;
-                this.hideLoadingState();
-                this.updateStreetHighlights();
-                return;
-            }
-            
-            // Fall back to cached data
-            const cachedData = this.getCachedData(cityName);
-            if (cachedData) {
-                console.log('Using cached street data for', cityName);
-                this.streetData = cachedData;
-                this.hideLoadingState();
-                this.updateStreetHighlights();
-            } else {
-                console.log('Fetching street data from Overpass API for', cityName);
-                this.fetchStreetDataFromAPI();
-            }
-        }).catch(error => {
-            console.warn('Error loading preprocessed data:', error);
-            // Fall back to cached or API
-            const cachedData = this.getCachedData(cityName);
-            if (cachedData) {
-                this.streetData = cachedData;
-                this.hideLoadingState();
-                this.updateStreetHighlights();
-            } else {
-                this.fetchStreetDataFromAPI();
-            }
-        });
+        // Try to load cached data first
+        const cachedData = this.getCachedData(cityName);
+        if (cachedData) {
+            console.log('Using cached street data for', cityName);
+            this.streetData = cachedData;
+            this.hideLoadingState();
+            this.updateStreetHighlights();
+        } else {
+            console.log('Fetching street data from Overpass API for', cityName);
+            this.fetchStreetDataFromAPI();
+        }
     },
     
     // Get current city name from global state
@@ -86,33 +64,6 @@ const RoadFilter = {
         return currentCityData ? currentCityData.address : 'Unknown City';
     },
     
-    // Load preprocessed data for a city
-    loadPreprocessedData: function(cityName) {
-        return new Promise((resolve, reject) => {
-            // Convert city name to filename format
-            const filename = cityName.replace(/[^a-zA-Z0-9]/g, '_') + '.json';
-            const url = `/static/data/cities/${filename}`;
-            
-            fetch(url)
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error(`Preprocessed data not found for ${cityName}`);
-                    }
-                })
-                .then(data => {
-                    if (data && data.streets) {
-                        resolve(data.streets);
-                    } else {
-                        reject(new Error('Invalid preprocessed data format'));
-                    }
-                })
-                .catch(error => {
-                    reject(error);
-                });
-        });
-    },
     
     // Get cached data from localStorage
     getCachedData: function(cityName) {

@@ -29,12 +29,6 @@ def index():
 def henge_near_me():
     return render_template('henge_near_me.html')
 
-@app.route('/static/data/cities/<filename>')
-def serve_city_data(filename):
-    """Serve preprocessed city data files"""
-    data_dir = os.path.join(app.root_path, 'data', 'cities')
-    return send_from_directory(data_dir, filename)
-
 @app.route('/lookup_azimuth_altitude', methods=['POST'])
 def lookup_azimuth_altitude():
     """Endpoint that handles azimuth and altitude lookup for visualization"""
