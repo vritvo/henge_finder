@@ -226,16 +226,16 @@ def get_horizon_azimuth(
         return None, None
 
     if time_of_day == "sunrise":
-        return _binary_search_sunrise(
-            -1, search_window_minutes, target_altitude_deg, reference_time, obs
+        return _binary_search(
+            -1, search_window_minutes, target_altitude_deg, reference_time, obs, "sunrise"
         )
     else:  # sunset
         return _binary_search(
-            -search_window_minutes, 1, target_altitude_deg, reference_time, obs
+            -search_window_minutes, 1, target_altitude_deg, reference_time, obs, "sunset"
         )
 
 
-def _binary_search(start, end, target_altitude_deg, sunset_time, obs):
+def _binary_search(start, end, target_altitude_deg, base_time, obs, time_of_day="sunset"):
     """
     Modification of binary search specifically to find the azimuth of the sun at the last minute before it drops below the target altitude of interest.
 
@@ -251,19 +251,25 @@ def _binary_search(start, end, target_altitude_deg, sunset_time, obs):
     while left < right:
         minute = (left + right) // 2
 
-        exact_time = sunset_time + timedelta(minutes=minute)
+        exact_time = base_time + timedelta(minutes=minute)
         altitude = sun.elevation(obs, exact_time)
 
         dist = target_altitude_deg - altitude
         if dist == 0:
             return sun.azimuth(obs, exact_time), exact_time
         elif dist < 0:
-            left = minute + 1
+            if time_of_day == "sunset":
+                left = minute + 1
+            else:
+                right = minute - 1
         else:
-            right = minute - 1
+            if time_of_day == "sunset":
+                right = minute - 1
+            else:
+                left = minute + 1
 
         if dist >= 0 and dist >= min_dist:
-            exact_time = sunset_time + timedelta(minutes=best_minute)
+            exact_time = base_time + timedelta(minutes=best_minute)
             return sun.azimuth(obs, exact_time), exact_time
 
         # if we've found a closer altitude to our target altitude than our best altitude, we update the best_min to be this one.
@@ -272,46 +278,5 @@ def _binary_search(start, end, target_altitude_deg, sunset_time, obs):
             min_dist = dist
             best_minute = minute
 
-    exact_time = sunset_time + timedelta(minutes=best_minute)
-    return sun.azimuth(obs, exact_time), exact_time
-
-
-def _binary_search_sunrise(start, end, target_altitude_deg, sunrise_time, obs):
-    """
-    Binary search specifically to find the azimuth of the sun at the first minute after it rises above the target altitude of interest.
-
-    We keep track of the min distance between the altitudes we've found so far and the target_altitude_deg.
-        - if dist = 0, we've found an exact match (the sun is sitting exactly where we want)
-        - otherwise, we return the time when the altitude of the sun was closest to but above target_altitude_deg.
-    """
-
-    min_dist = float("inf")
-    best_minute: int
-
-    left, right = start, end
-    while left < right:
-        minute = (left + right) // 2
-
-        exact_time = sunrise_time + timedelta(minutes=minute)
-        altitude = sun.elevation(obs, exact_time)
-
-        dist = target_altitude_deg - altitude
-        if dist == 0:
-            return sun.azimuth(obs, exact_time), exact_time
-        elif dist < 0:
-            right = minute - 1
-        else:
-            left = minute + 1
-
-        if dist >= 0 and dist >= min_dist:
-            exact_time = sunrise_time + timedelta(minutes=best_minute)
-            return sun.azimuth(obs, exact_time), exact_time
-
-        # if we've found a closer altitude to our target altitude than our best altitude, we update the best_min to be this one.
-        # Since we want the altitude to always be above the horizon, we make sure dist >0.
-        if dist >= 0 and dist < min_dist:
-            min_dist = dist
-            best_minute = minute
-
-    exact_time = sunrise_time + timedelta(minutes=best_minute)
+    exact_time = base_time + timedelta(minutes=best_minute)
     return sun.azimuth(obs, exact_time), exact_time

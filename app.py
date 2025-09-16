@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from config import TARGET_ALTITUDE_DEG
 from hengefinder import search_for_henge
 import datetime
 from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
@@ -142,8 +143,9 @@ def lookup_sun_angles():
     try:
         data = request.get_json()
         address = data.get('address')
-        start_date = data.get('start_date')  # Optional start date in YYYY-MM-DD format
-        time_of_day = data.get('time_of_day', 'sunrise')  # Default to sunrise if not provided
+        start_date = data.get('start_date')  # Optional: start date in YYYY-MM-DD format
+        time_of_day = data.get('time_of_day', 'sunrise')  # Optional: default to sunrise
+        target_altitude_deg = data.get('target_altitude_deg', TARGET_ALTITUDE_DEG) # Optional: default to 0.5 degrees
         
         if not address:
             return jsonify({'error': 'Please enter an address to calculate sun angles.'}), 400
@@ -188,7 +190,6 @@ def lookup_sun_angles():
 
         # Calculate sun angles with henge detection
         try:
-            target_altitude_deg = 0.5
             result = calculate_sun_azimuths_for_year(lat, lon, start_date=start_date_obj, target_altitude_deg=target_altitude_deg, time_of_day=time_of_day)
             
             # Add address and coordinate info to response
