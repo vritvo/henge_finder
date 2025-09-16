@@ -487,10 +487,10 @@ out geom;
     
     // Debounce map update
     debounceMapUpdate: function() {
-        clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(() => {
-            this.updateForCurrentView();
-        }, this.config.debounceDelay);
+        clearTimeout(RoadFilter.debounceTimer);
+        RoadFilter.debounceTimer = setTimeout(() => {
+            RoadFilter.updateForCurrentView();
+        }, RoadFilter.config.debounceDelay);
     },
     
     // Update for current map view
@@ -511,14 +511,6 @@ out geom;
             this.updateStreetHighlights();
         } else {
             this.clearStreetHighlights();
-        }
-    },
-    
-    // Update configuration
-    updateConfig: function(newConfig) {
-        Object.assign(this.config, newConfig);
-        if (this.isEnabled) {
-            this.updateStreetHighlights();
         }
     },
     
