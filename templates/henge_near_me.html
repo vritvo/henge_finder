@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Henge Finder</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/henge_near_me.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/road_filter.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Henge Near Me</h1>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <a href="/" class="tab-button" style="text-decoration: none; color: inherit;">Find a Henge</a>
+            <a href="/#learn" class="tab-button" style="text-decoration: none; color: inherit;">How Do Henges Work?</a>
+            <button class="tab-button active">Henge Near Me</button>
+        </div>
+        <p style="color: #5E4955; margin-bottom: 30px;">
+            Discover when the sun will align with streets in your city. Select a city and explore how the sun's path changes throughout the year.
+        </p>
+        
+        <div class="city-input-container">
+            <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 1: Select a City</h3>
+            <input type="text" id="cityInput" class="city-input" placeholder="Enter city name (e.g., New York, London, Tokyo)" autocomplete="off">
+            <div id="suggestions" class="suggestions-dropdown"></div>
+        </div>
+        
+        <div class="loading-henge" id="loadingHenge">
+            <div class="spinner-henge"></div>
+            <p>Loading city data and calculating sun angles...</p>
+        </div>
+        
+        <div id="mapAndControls" style="display: none;">
+            <div class="date-slider-container">
+                <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 2: Select a Date and Time of Day</h3>
+                <div class="date-display" id="dateDisplay">Today</div>
+                <input type="range" id="dateSlider" class="date-slider" min="0" max="364" value="0">
+                <div style="display: flex; justify-content: space-between; color: #666; font-size: 14px; margin-top: 5px;">
+                    <span>Jan 1</span>
+                    <span>Day of Year</span>
+                    <span>Dec 31</span>
+                </div>
+                <div class="toggle-switch">
+                    <input type="radio" id="sunrise" name="timeOfDay" value="sunrise">
+                    <label for="sunrise">Sunrise</label>
+                    <input type="radio" id="sunset" name="timeOfDay" value="sunset" checked>
+                    <label for="sunset">Sunset</label>
+                </div>
+            </div>
+            <div class="map-container-henge">
+                <div id="hengeMap" style="height: 500px; width: 100%;"></div>
+                <div id="mapLoadingOverlay" class="map-loading-overlay">
+                    <div class="map-loading-spinner"></div>
+                    <p class="map-loading-text">Loading sun angles...</p>
+                </div>
+            </div>
+            
+            
+            <div class="azimuth-info" id="azimuthInfo">
+                <strong>Sun Azimuth:</strong> <span id="azimuthValue">-</span>° from North
+                <br>
+                <strong>Selected Date:</strong> <span id="selectedDate">-</span>
+            </div>
+        </div>
+        <div class="disclaimer">
+            <p><span class="topic">Note: These predictions are rough estimate calculations.</span> For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/road_filter.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/henge_near_me.js') }}" defer></script>
+</body>
+</html>

@@ -1,9 +1,13 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
+from config import TARGET_ALTITUDE_DEG
 from hengefinder import search_for_henge
 import datetime
 from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
 import traceback
 from astral import Observer, sun
+from sunset_calculator import calculate_sun_azimuths_for_year
+from zoneinfo import ZoneInfo
+import os
 
 
 app = Flask(__name__)
@@ -21,6 +25,10 @@ demo_observer = make_observer()
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/henge_near_me')
+def henge_near_me():
+    return render_template('henge_near_me.html')
 
 @app.route('/lookup_azimuth_altitude', methods=['POST'])
 def lookup_azimuth_altitude():
@@ -127,6 +135,89 @@ def lookup_address():
         return jsonify({
             'error': 'An unexpected error occurred while processing your request. Please try again or contact support if the problem persists.'
         }), 500
+
+
+@app.route('/lookup_sun_angles', methods=['POST'])
+def lookup_sun_angles():
+    """Endpoint that calculates sun azimuth for every day of the year at a given location"""
+    try:
+        data = request.get_json()
+        address = data.get('address')
+        start_date = data.get('start_date')  # Optional: start date in YYYY-MM-DD format
+        time_of_day = data.get('time_of_day', 'sunrise')  # Optional: default to sunrise
+        target_altitude_deg = data.get('target_altitude_deg', TARGET_ALTITUDE_DEG) # Optional: default to 0.5 degrees
+        
+        if not address:
+            return jsonify({'error': 'Please enter an address to calculate sun angles.'}), 400
+
+        # Validate time_of_day parameter
+        if time_of_day not in ['sunrise', 'sunset']:
+            return jsonify({'error': 'time_of_day must be either "sunrise" or "sunset"'}), 400
+
+        # Get coordinates and standardized address
+        try:
+            location = get_location(address)
+            lat, lon = get_coordinates(location)
+            standardized_address = get_standardized_address(location)
+            
+            try:
+                check_latitude(lat)
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
+                
+        except GeocodingError as e:
+            print(f"Geocoding error: {e}")
+            return jsonify({
+                'error': f"Could not find the address '{address}'. Please check the spelling and try again."
+            }), 400
+        except Exception as e:
+            print(f"Unexpected error getting coordinates: {e}")
+            return jsonify({'error': f'Error processing address: {str(e)}'}), 400
+
+        # Parse start date if provided, otherwise use January 1 of current year
+        if start_date:
+            try:
+                start_date_obj = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid start date format. Use YYYY-MM-DD format.'}), 400
+        else:
+            # Default to January 1 of current year
+            current_year = datetime.now(ZoneInfo("UTC")).year
+            start_date_obj = datetime(current_year, 1, 1).date()
+
+        # Calculate end date (one year later)
+        end_date_obj = datetime.datetime(start_date_obj.year + 1, start_date_obj.month, start_date_obj.day).date()
+
+        # Calculate sun angles with henge detection
+        try:
+            result = calculate_sun_azimuths_for_year(lat, lon, start_date=start_date_obj, target_altitude_deg=target_altitude_deg, time_of_day=time_of_day)
+            
+            # Add address and coordinate info to response
+            response_data = {
+                'address': standardized_address,
+                'coordinates': {'lat': lat, 'lon': lon},
+                'start_date': start_date_obj.isoformat(),
+                'end_date': end_date_obj.isoformat(),
+                'time_of_day': time_of_day,
+                'sun_angles': result
+            }
+            
+            return jsonify(response_data)
+            
+        except Exception as e:
+            print(f"Error calculating sun angles: {e}")
+            traceback.print_exc()
+            return jsonify({
+                'error': f'An error occurred while calculating {time_of_day} angles. Please try again.'
+            }), 500
+            
+    except Exception as e:
+        print(f"Unexpected error in lookup_sun_angles: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'error': 'An unexpected error occurred while processing your request. Please try again or contact support if the problem persists.'
+        }), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)

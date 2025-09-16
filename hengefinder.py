@@ -106,7 +106,6 @@ def search_for_henge(
                 print('Could not get azimuth, skipping...')
                 curr_date = curr_date + timedelta(days=1) # Just moving forward 1 day. keeping the "previous" day info the same. 
                 continue
-            print(round(az_curr_date, 2))
 
             sun_direction = np.sign(az_curr_date - prev_az)
 
@@ -212,8 +211,6 @@ def search_daily_for_henge(
             print("Error getting azimuth for date")
             curr_date = curr_date + timedelta(days=1)
             continue
-
-        print(round(az_curr_date, 2))
 
         # Check if the azimuth matches the road bearing
         henge_found = check_match(az_curr_date, road_bearing)
