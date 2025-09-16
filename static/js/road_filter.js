@@ -17,16 +17,20 @@ const RoadFilter = {
         maxStreetLength: 10000, // meters
         alignmentTolerance: .5, // degrees
         debounceDelay: 300, // milliseconds
-        roadTypes: ['primary', 'secondary', 'tertiary', 'residential', 'trunk', 'motorway', 'unclassified', 'service'],
-        overpassUrl: 'https://overpass-api.de/api/interpreter'
+        roadTypes: ['primary', 'secondary', 'tertiary', 'residential', 'trunk', 'motorway', 'unclassified', 'service']
     },
     
-    // Initialize road filtering for a city
-    initializeForCity: function(coordinates, sunAnglesData) {
-        console.log('Initializing road filter for city:', coordinates);
+    // Initialize road filtering with raw Overpass API data
+    initializeWithOverpassData: function(coordinates, sunAnglesData, rawOverpassData) {
+        console.log('Initializing road filter with raw Overpass data:', coordinates);
         this.currentBounds = this.calculateBounds(coordinates.lat, coordinates.lon, 25); // 25km radius
-        this.showLoadingState();
-        this.loadStreetData();
+        
+        // Process the raw Overpass data into street objects
+        this.streetData = this.processOverpassData(rawOverpassData);
+        
+        this.hideLoadingState();
+        this.updateStreetHighlights();
+        this.updateStats();
     },
     
     // Calculate bounding box for a city
@@ -42,22 +46,6 @@ const RoadFilter = {
         };
     },
     
-    // Load street data (try cached first, then Overpass API)
-    loadStreetData: function() {
-        const cityName = this.getCurrentCityName();
-        
-        // Try to load cached data first
-        const cachedData = this.getCachedData(cityName);
-        if (cachedData) {
-            console.log('Using cached street data for', cityName);
-            this.streetData = cachedData;
-            this.hideLoadingState();
-            this.updateStreetHighlights();
-        } else {
-            console.log('Fetching street data from Overpass API for', cityName);
-            this.fetchStreetDataFromAPI();
-        }
-    },
     
     // Get current city name from global state
     getCurrentCityName: function() {
@@ -98,54 +86,7 @@ const RoadFilter = {
         }
     },
     
-    // Fetch street data from Overpass API
-    fetchStreetDataFromAPI: function() {
-        if (!this.currentBounds) return;
-        
-        const query = this.buildOverpassQuery();
-        
-        fetch(this.config.overpassUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `data=${encodeURIComponent(query)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            const processedStreets = this.processOverpassData(data);
-            this.streetData = processedStreets;
-            
-            // Cache the data
-            const cityName = this.getCurrentCityName();
-            this.cacheData(cityName, processedStreets);
-            
-            this.hideLoadingState();
-            this.updateStreetHighlights();
-            this.updateStats();
-        })
-        .catch(error => {
-            console.error('Error fetching street data:', error);
-            this.hideLoadingState();
-            this.showError('Failed to load street data. Please try again.');
-        });
-    },
-    
-    // Build Overpass API query
-    buildOverpassQuery: function() {
-        const bounds = this.currentBounds;
-        return `
-[out:json][timeout:60];
-(
-  way["highway"~"^(primary|secondary|tertiary|residential|trunk|motorway|unclassified|service)$"]
-  ["name"]
-  (${bounds.south},${bounds.west},${bounds.north},${bounds.east});
-);
-out geom;
-        `.trim();
-    },
-    
-    // Process Overpass API response
+    // Process raw Overpass API data into street objects
     processOverpassData: function(data) {
         const streets = [];
         
