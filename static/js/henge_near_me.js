@@ -15,6 +15,37 @@ let endDate = null;   // The ending date for the year's worth of data
 let roadFilterEnabled = true;
 let streetHighlightLayer = null;
 
+// Loading indicator management functions
+function showLoadingIndicators() {
+    const loadingHenge = document.getElementById('loadingHenge');
+    const mapLoadingOverlay = document.getElementById('mapLoadingOverlay');
+    
+    if (loadingHenge) {
+        loadingHenge.style.display = 'block';
+    }
+    if (mapLoadingOverlay) {
+        mapLoadingOverlay.style.display = 'flex';
+    }
+}
+
+function hideLoadingIndicators() {
+    const loadingHenge = document.getElementById('loadingHenge');
+    const mapLoadingOverlay = document.getElementById('mapLoadingOverlay');
+    
+    if (loadingHenge) {
+        loadingHenge.style.display = 'none';
+    }
+    if (mapLoadingOverlay) {
+        mapLoadingOverlay.style.display = 'none';
+    }
+}
+
+// Overpass API configuration
+const OVERPASS_CONFIG = {
+    url: 'https://overpass-api.de/api/interpreter',
+    timeout: 60
+};
+
 // Popular cities for typeahead suggestions
 const popularCities = [
     "New York, NY, USA",
@@ -282,17 +313,10 @@ function initializeTimeToggle() {
 
 // Load city data and calculate sun angles
 async function loadCityData(cityName, isToggleChange = false) {
-    const loading = document.getElementById('loadingHenge');
     const mapAndControls = document.getElementById('mapAndControls');
     
-    if (isToggleChange) {
-        // For toggle changes, show overlay loading instead of hiding map
-        showMapLoadingOverlay();
-    } else {
-        // For initial city selection, hide map and show full loading
-        loading.style.display = 'block';
-        mapAndControls.style.display = 'none';
-    }
+    showLoadingIndicators();
+    mapAndControls.style.display = 'none';
     
     try {
         const today = new Date();
@@ -337,16 +361,31 @@ async function loadCityData(cityName, isToggleChange = false) {
             // Initialize map
             initializeMap(data.coordinates.lat, data.coordinates.lon);
             
-            // Initialize road filtering
-            if (typeof RoadFilter !== 'undefined') {
-                RoadFilter.initializeForCity(data.coordinates, sunAnglesData);
-            }
-            
             // Show controls
             mapAndControls.style.display = 'block';
             
             // Update azimuth display
             updateAzimuthDisplay();
+            
+            // Fetch street data from Overpass API and then initialize road filtering
+            try {
+                console.log('Fetching street data from Overpass API...');
+                const rawOverpassData = await fetchStreetDataFromOverpass(data.coordinates);
+                
+                // Initialize road filtering with the raw Overpass data for processing
+                if (typeof RoadFilter !== 'undefined') {
+                    RoadFilter.initializeWithOverpassData(data.coordinates, sunAnglesData, rawOverpassData);
+                }
+                
+                // Hide loading indicator after Overpass API completes successfully
+                updateDateDisplay();
+                hideLoadingIndicators();
+                
+            } catch (error) {
+                console.error('Error fetching street data:', error);
+                updateDateDisplay();
+                hideLoadingIndicators();
+            }
             
         } else {
             alert('Error: ' + data.error);
@@ -355,11 +394,8 @@ async function loadCityData(cityName, isToggleChange = false) {
         console.error('Error:', error);
         alert('Network error. Please try again.');
     } finally {
-        if (isToggleChange) {
-            hideMapLoadingOverlay();
-        } else {
-            loading.style.display = 'none';
-        }
+        updateDateDisplay();
+        hideLoadingIndicators();
     }
 }
 
@@ -720,21 +756,6 @@ function getDateFromDayOfYear(dayOfYear) {
     return date;
 }
 
-// Map loading overlay functions
-function showMapLoadingOverlay() {
-    const overlay = document.getElementById('mapLoadingOverlay');
-    if (overlay) {
-        overlay.style.display = 'flex';
-    }
-}
-
-function hideMapLoadingOverlay() {
-    const overlay = document.getElementById('mapLoadingOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
-}
-
 // Draw sunrise icon (sun with rays and directional pointer)
 function drawSunriseIcon(x, y, size) {
     // Draw the main circle
@@ -780,6 +801,53 @@ function drawSunriseIcon(x, y, size) {
     ctx.lineTo(baseX2, baseY2);
     ctx.closePath();
     ctx.fill();
+}
+
+// Overpass API functions - only for fetching raw data
+function calculateBounds(lat, lon, radiusKm) {
+    const latDelta = radiusKm / 111.0;
+    const lonDelta = radiusKm / (111.0 * Math.cos(Math.PI * lat / 180));
+    
+    return {
+        north: lat + latDelta,
+        south: lat - latDelta,
+        east: lon + lonDelta,
+        west: lon - lonDelta
+    };
+}
+
+function buildOverpassQuery(bounds) {
+    return `
+[out:json][timeout:60];
+(
+  way["highway"~"^(primary|secondary|tertiary|residential|trunk|motorway|unclassified|service)$"]
+  ["name"]
+  (${bounds.south},${bounds.west},${bounds.north},${bounds.east});
+);
+out geom;
+    `.trim();
+}
+
+async function fetchStreetDataFromOverpass(coordinates) {
+    const bounds = calculateBounds(coordinates.lat, coordinates.lon, 25); // 25km radius
+    const query = buildOverpassQuery(bounds);
+    
+    console.log('Fetching street data from Overpass API for', coordinates);
+    
+    const response = await fetch(OVERPASS_CONFIG.url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `data=${encodeURIComponent(query)}`
+    });
+    
+    if (!response.ok) {
+        throw new Error(`Overpass API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data; // Return raw Overpass data, let RoadFilter process it
 }
 
 // Draw sunset icon (sun with directional pointer)

@@ -13,7 +13,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Henge Near Me</h1>
+        <h1>Henge Finder</h1>
         
         <!-- Tab Navigation -->
         <div class="tab-navigation">
@@ -29,11 +29,6 @@
             <h3 style="color: #DC816E; margin-bottom: 15px; font-size: 1.3em;">Step 1: Select a City</h3>
             <input type="text" id="cityInput" class="city-input" placeholder="Enter city name (e.g., New York, London, Tokyo)" autocomplete="off">
             <div id="suggestions" class="suggestions-dropdown"></div>
-        </div>
-        
-        <div class="loading-henge" id="loadingHenge">
-            <div class="spinner-henge"></div>
-            <p>Loading city data and calculating sun angles...</p>
         </div>
         
         <div id="mapAndControls" style="display: none;">
@@ -57,7 +52,7 @@
                 <div id="hengeMap" style="height: 500px; width: 100%;"></div>
                 <div id="mapLoadingOverlay" class="map-loading-overlay">
                     <div class="map-loading-spinner"></div>
-                    <p class="map-loading-text">Loading sun angles...</p>
+                    <p class="map-loading-text">Loading city data and calculating sun angles...</p>
                 </div>
             </div>
             
