@@ -362,17 +362,42 @@ async function addHengeToCalendar(data) {
         date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
     const title = "Henge Alignment";
-    const description = `A perfect henge alignment is set for ${data.result.henge_time_local_str}!`;
+    const description = [
+        `A perfect henge alignment is set for ${data.result.henge_time_local_str}!`,
+        `Exact location:\n${data.address}`
+    ].join('\n\n');
 
     const safeDescription = description
         .replace(/,/g, '\\,')
         .replace(/;/g, '\\;')
         .replace(/\n/g, '\\n');
 
-    const safeLocation = data.address
+    async function extractConciseLocation(address) {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(address)}`);
+        const data = await response.json();
+        const addr = data[0]?.address || {};
+
+        const locationDetails = {
+            street: addr.house_number && addr.road ? `${addr.house_number} ${addr.road}` : addr.road || null,
+            city: addr.city || addr.town || addr.village || addr.municipality || null,
+            state: addr.state || null,
+            postalCode: addr.postcode || null,
+            country: addr.country || null,
+        };
+
+        // Build a single-line string, filter out nulls, join with commas
+        return [
+            locationDetails.street,
+            locationDetails.city,
+            locationDetails.state && locationDetails.postalCode ? `${locationDetails.state} ${locationDetails.postalCode}` : locationDetails.state || locationDetails.postalCode,
+            locationDetails.country
+        ].filter(Boolean).join(', ');
+    }
+
+    const locationStr = await extractConciseLocation(data.address);
+    const safeLocation = locationStr
         .replace(/,/g, '\\,')
-        .replace(/;/g, '\\;')
-        .replace(/\n/g, '\\n');
+        .replace(/;/g, '\\;');
 
     function dedent(str) {
         return str.replace(/^\s+/gm, '');
