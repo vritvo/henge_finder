@@ -48,6 +48,42 @@ def get_standardized_address(location):
     return location.address
 
 
+def get_concise_address(location):
+    """
+    Get a concise version of address
+    """
+    geolocator = Nominatim(
+        user_agent="HengeFinder", timeout=10
+    )  # longer timeout is needed for some addresses
+
+    rev = geolocator.reverse((location.latitude, location.longitude), addressdetails=True)
+    if rev is None:
+        raise GeocodingError(f"Could not reverse-geocode: {location.address}")
+    
+    addr = rev.raw.get("address", {})
+
+    # Extract fields with fallbacks
+    street = addr.get("road") or addr.get("residential") or addr.get("pedestrian")
+    city = (
+        addr.get("city")
+        or addr.get("town")
+        or addr.get("village")
+        or addr.get("hamlet")
+        or addr.get("suburb")
+    )
+    state = addr.get("state")
+    postcode = addr.get("postcode")
+    country = addr.get("country")
+
+    # Combine state with postcode (no comma separation) for parts assembly
+    state_post = f"{state} {postcode}".strip() if state or postcode else None
+
+    parts = [street, city, state_post, country]
+    concise = ", ".join(filter(None, parts))
+
+    return concise
+
+
 def get_utc_start_date():
     """
     Get today's date in UTC (standardized)

@@ -372,29 +372,7 @@ async function addHengeToCalendar(data) {
         .replace(/;/g, '\\;')
         .replace(/\n/g, '\\n');
 
-    async function extractConciseLocation(address) {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(address)}`);
-        const data = await response.json();
-        const addr = data[0]?.address || {};
-
-        const locationDetails = {
-            street: addr.house_number && addr.road ? `${addr.house_number} ${addr.road}` : addr.road || null,
-            city: addr.city || addr.town || addr.village || addr.municipality || null,
-            state: addr.state || null,
-            postalCode: addr.postcode || null,
-            country: addr.country || null,
-        };
-
-        // Build a single-line string, filter out nulls, join with commas
-        return [
-            locationDetails.street,
-            locationDetails.city,
-            locationDetails.state && locationDetails.postalCode ? `${locationDetails.state} ${locationDetails.postalCode}` : locationDetails.state || locationDetails.postalCode,
-            locationDetails.country
-        ].filter(Boolean).join(', ');
-    }
-
-    const locationStr = await extractConciseLocation(data.address);
+    const locationStr = data.concise_address;
     const safeLocation = locationStr
         .replace(/,/g, '\\,')
         .replace(/;/g, '\\;');

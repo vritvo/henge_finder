@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from config import TARGET_ALTITUDE_DEG
 from hengefinder import search_for_henge
 import datetime
-from utils import get_location, get_coordinates, get_standardized_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
+from utils import get_location, get_coordinates, get_standardized_address, get_concise_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
 import traceback
 from astral import Observer, sun
 from sunset_calculator import calculate_sun_azimuths_for_year
@@ -76,6 +76,7 @@ def lookup_address():
             lat, lon = get_coordinates(location)
 
             standardized_address = get_standardized_address(location)
+            concise_address = get_concise_address(location)
             try:
                 check_latitude(lat)
             except ValueError as e:
@@ -117,6 +118,7 @@ def lookup_address():
             
             return jsonify({
                 'address': standardized_address,
+                'concise_address': concise_address,
                 'coordinates': {'lat': lat, 'lon': lon},
                 'road_bearing': round(road_bearing, 2),
                 'result': result
@@ -125,6 +127,7 @@ def lookup_address():
             # Just return address info for initial display
             return jsonify({
                 'address': standardized_address,
+                'concise_address': concise_address,
                 'coordinates': {'lat': lat, 'lon': lon},
                 'road_bearing': round(road_bearing, 2)
             })
