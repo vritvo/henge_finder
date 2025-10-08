@@ -353,6 +353,66 @@ function onMapMouseUp() {
     }
 }
 
+// Create .ics file for downloadable calendar event
+async function addHengeToCalendar(data) {
+    const start = new Date(data.result.henge_date);
+    const end = new Date(start.getTime() + 30 * 60 * 1000); // 30 mins
+
+    const formatDate = (date) =>
+        date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+    const title = "Henge Alignment";
+    const description = [
+        `A perfect henge alignment is set for ${data.result.henge_time_local_str}!`,
+        `Exact location:\n${data.address}`
+    ].join('\n\n');
+
+    const safeDescription = description
+        .replace(/,/g, '\\,')
+        .replace(/;/g, '\\;')
+        .replace(/\n/g, '\\n');
+
+    const locationStr = data.concise_address;
+    const safeLocation = locationStr
+        .replace(/,/g, '\\,')
+        .replace(/;/g, '\\;');
+
+    function dedent(str) {
+        return str.replace(/^\s+/gm, '');
+    }
+
+    const icsContent = dedent(`
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        PRODID:-//HengeFinder//EN
+        BEGIN:VEVENT
+        UID:${Date.now()}@hengefinder
+        DTSTAMP:${formatDate(new Date())}
+        DTSTART:${formatDate(start)}
+        DTEND:${formatDate(end)}
+        SUMMARY:${title}
+        DESCRIPTION:${safeDescription}
+        LOCATION:${safeLocation}
+        END:VEVENT
+        END:VCALENDAR
+    `).trim();
+
+    // Automatically download .ics file 
+    const blob = new Blob([icsContent], { type: "text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "henge-event.ics";
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    console.log("ICS content:\n", icsContent);
+}
+
 // Calculate henge function
 async function calculateHenge() {
     const calculateBtn = document.getElementById('calculateHengeBtn');
@@ -379,6 +439,12 @@ async function calculateHenge() {
 
         if (response.ok) {
             displayResult(data);
+
+            // Generate calendar event to download
+            const calendarButton = document.getElementById("add-to-calendar");
+            if (calendarButton) {
+                calendarButton.addEventListener("click", () => addHengeToCalendar(data));
+            }
 
             // Replace interactive arrow with static arrows
             if (data.result.henge_found) {
@@ -497,6 +563,8 @@ function displayResult(data) {
                     <div class="disclaimer">
                         <p><span class="topic">Note: These predictions are rough estimates calculations.</span> For official city-wide henge events (like Manhattanhenge), check official announcements. They use specific city reference points and spatial assumptions, which may differ from the street-to-street calculations and assumptions used here.</p>
                     </div>
+                    <br/>
+                        <button id="add-to-calendar">Add to Calendar</button>
                 `;
         hengeResultDiv.className = 'result success';
     } else {
