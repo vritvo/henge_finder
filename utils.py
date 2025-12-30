@@ -281,7 +281,7 @@ def _binary_search(start, end, target_altitude_deg, base_time, obs, time_of_day=
     """
 
     min_dist = float("inf")
-    best_minute: int
+    best_minute = start  # initialize 
 
     left, right = start, end
     while left < right:
@@ -304,14 +304,14 @@ def _binary_search(start, end, target_altitude_deg, base_time, obs, time_of_day=
             else:
                 left = minute + 1
 
-        if dist >= 0 and dist >= min_dist:
+        if dist < 0 and -dist >= min_dist:
             exact_time = base_time + timedelta(minutes=best_minute)
             return sun.azimuth(obs, exact_time), exact_time
 
-        # if we've found a closer altitude to our target altitude than our best altitude, we update the best_min to be this one.
-        # Since we want the altitude to always be above the horizon, we make sure dist >0.
-        if dist >= 0 and dist < min_dist:
-            min_dist = dist
+        # if we've found a closer altitude to our target altitude than our best altitude, we update the best_minute to be this one.
+        # Since we want the altitude to always be above the target, we make sure dist < 0 (altitude > target).
+        if dist < 0 and -dist < min_dist:
+            min_dist = -dist
             best_minute = minute
 
     exact_time = base_time + timedelta(minutes=best_minute)
