@@ -273,46 +273,40 @@ def get_horizon_azimuth(
 
 def _binary_search(start, end, target_altitude_deg, base_time, obs, time_of_day="sunset"):
     """
-    Modification of binary search specifically to find the azimuth of the sun at the last minute before it drops below the target altitude of interest.
-
-    We keep track of the min distance between the altitudes we've found so far and the target_altitude_deg.
-        - if dist = 0, we've found an exact match (the sun is sitting exactly where we want)
-        - otherwise, we return the time when the altitude of the sun was closest to but above target_altitude_deg.
+    Modified binary search to find the sun's azimuth at a critical moment.
+    
+    For sunset: finds the LAST minute where sun is above target_altitude_deg
+    For sunrise: finds the FIRST minute where sun is above target_altitude_deg
+    
     """
-
-    min_dist = float("inf")
-    best_minute = start  # initialize 
-
     left, right = start, end
-    while left < right:
-        minute = (left + right) // 2
 
-        exact_time = base_time + timedelta(minutes=minute)
-        altitude = sun.elevation(obs, exact_time)
+    if time_of_day == "sunset":
+        # "Last true" boundary search - find last minute where altitude > target
+        # Uses upper-biased mid to avoid infinite loop when left = mid
+        while left < right:
+            mid = (left + right + 1) // 2  # upper-biased
+            exact_time = base_time + timedelta(minutes=mid)
+            altitude = sun.elevation(obs, exact_time)
 
-        dist = target_altitude_deg - altitude
-        if dist == 0:
-            return sun.azimuth(obs, exact_time), exact_time
-        elif dist < 0:
-            if time_of_day == "sunset":
-                left = minute + 1
+            if altitude > target_altitude_deg:
+                left = mid      # mid is valid, could be the last one
             else:
-                right = minute - 1
-        else:
-            if time_of_day == "sunset":
-                right = minute - 1
+                right = mid - 1  # mid is invalid, look earlier
+    else: #sunrise
+        # "First true" boundary search - find first minute where altitude > target
+        # Uses lower-biased mid to avoid infinite loop when right = mid
+        while left < right:
+            mid = (left + right) // 2  # lower-biased
+            exact_time = base_time + timedelta(minutes=mid)
+            altitude = sun.elevation(obs, exact_time)
+
+            if altitude > target_altitude_deg:
+                right = mid      # mid is valid, could be the first one
             else:
-                left = minute + 1
+                left = mid + 1   # mid is invalid, look later
 
-        if dist < 0 and -dist >= min_dist:
-            exact_time = base_time + timedelta(minutes=best_minute)
-            return sun.azimuth(obs, exact_time), exact_time
-
-        # if we've found a closer altitude to our target altitude than our best altitude, we update the best_minute to be this one.
-        # Since we want the altitude to always be above the target, we make sure dist < 0 (altitude > target).
-        if dist < 0 and -dist < min_dist:
-            min_dist = -dist
-            best_minute = minute
-
-    exact_time = base_time + timedelta(minutes=best_minute)
+    # left == right == the boundary minute
+    exact_time = base_time + timedelta(minutes=left)
     return sun.azimuth(obs, exact_time), exact_time
+
