@@ -78,9 +78,9 @@ docs/_build/
 .pybuilder/
 target/
 
-# Jupyter Notebook
+# Jupyter Notebook / plots
 .ipynb_checkpoints
-
+plots/
 # IPython
 profile_default/
 ipython_config.py
