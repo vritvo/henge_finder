@@ -1,4 +1,4 @@
-# 🌅 Henge Finder 
+# 🌅 Hengefinder 
 
 Finds when the sun aligns with your street for a perfect sunset view (like [Manhattanhenge](https://en.wikipedia.org/wiki/Manhattanhenge)).
 

@@ -1,4 +1,4 @@
-// Road Filtering Module for Henge Finder
+// Road Filtering Module for Hengefinder
 // Global state management for street highlighting functionality
 
 const RoadFilter = {
