@@ -1,4 +1,4 @@
-# Road Highlighting Feature for Henge Finder
+# Road Highlighting Feature for Hengefinder
 
 ## Overview
 

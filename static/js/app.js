@@ -384,7 +384,7 @@ async function addHengeToCalendar(data) {
     const icsContent = dedent(`
         BEGIN:VCALENDAR
         VERSION:2.0
-        PRODID:-//HengeFinder//EN
+        PRODID:-//Hengefinder//EN
         BEGIN:VEVENT
         UID:${Date.now()}@hengefinder
         DTSTAMP:${formatDate(new Date())}
