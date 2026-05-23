@@ -5,7 +5,7 @@ import datetime
 from utils import get_location, get_coordinates, get_standardized_address, get_concise_address, get_road_bearing, GeocodingError, check_latitude, get_utc_start_date, normalize_bearing_to_180_360
 import traceback
 from astral import Observer, sun
-from astral.geocoder import all_locations, database
+import geonamescache
 from sunset_calculator import calculate_sun_azimuths_for_year
 from zoneinfo import ZoneInfo
 import os
@@ -144,8 +144,11 @@ def lookup_address():
 @app.route("/cities", methods=["GET"])
 def cities():
     """Return list of cities for the UI dropdown"""
-    cities = [f"{loc.name}, {loc.region}" for loc in all_locations(database())]
-    return jsonify(cities)
+    gc = geonamescache.GeonamesCache()
+    cities = gc.get_cities()
+    countries = gc.get_countries()
+    names = [f"{c['name']}, {countries[c['countrycode']]['name']}" for c in cities.values()]
+    return jsonify(names)
 
 
 @app.route("/lookup_sun_angles", methods=["POST"])

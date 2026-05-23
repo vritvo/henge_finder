@@ -5,5 +5,6 @@ jupyter>=1.0.0
 ipython>=7.0.0
 ipykernel>=6.0.0
 timezonefinder>=6.2.0
-flask>=2.3.0 
-matplotlib 
+flask>=2.3.0
+matplotlib
+geonamescache>=3.0.0
