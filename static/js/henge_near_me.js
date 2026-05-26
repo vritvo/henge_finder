@@ -46,7 +46,8 @@ const OVERPASS_CONFIG = {
     timeout: 60
 };
 
-// Popular cities for typeahead suggestions
+// Popular cities for typeahead suggestions (now a fallback for when
+// requests to OpenDataSoft fail)
 const popularCities = [
     "New York, NY, USA",
     "Los Angeles, CA, USA", 
@@ -240,9 +241,33 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // City input with typeahead functionality
-function initializeCityInput() {
+async function initializeCityInput() {
     const cityInput = document.getElementById('cityInput');
     const suggestions = document.getElementById('suggestions');
+
+    // Fetch list of worldwide cities with a population of at least 100,000
+    // from public OpenDataSoft dataset
+    let cityList = popularCities;
+    try {
+        const minCitySize = 100_000;
+        const params = new URLSearchParams({
+            select: 'name,admin1_code,cou_name_en,country_code,population',
+            where: `population >= ${minCitySize}`,
+            order_by: 'name',
+        });
+        const citySearchBaseUrl = 
+            `https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/geonames-all-cities-with-a-population-1000/exports/json`;
+        const cityResponse = await fetch(`${citySearchBaseUrl}?${params.toString()}`);
+        if (!cityResponse.ok) {
+            throw new Error(`Failed to fetch city data: ${cityResponse.status} - ${cityResponse.statusText}`);
+        }
+        const cityData = await cityResponse.json();
+        console.log(cityData.length);
+        cityList = cityData.map(city => formatCityName(city));
+    } catch (error) {
+        // Naturally falls back to hard-coded list of popular cities above
+        console.error('Error fetching city data:', error);
+    }
     
     cityInput.addEventListener('input', function() {
         const query = this.value.toLowerCase().trim();
@@ -252,13 +277,13 @@ function initializeCityInput() {
             return;
         }
         
-        const filteredCities = popularCities.filter(city => 
+        const filteredCities = cityList.filter(city => 
             city.toLowerCase().includes(query)
         ).slice(0, 10); // Limit to 10 suggestions
         
         if (filteredCities.length > 0) {
             suggestions.innerHTML = filteredCities.map(city => 
-                `<div class="suggestion-item" onclick="selectCity('${city}')">${city}</div>`
+                `<div class="suggestion-item" onclick='selectCity("${city}")'>${city}</div>`
             ).join('');
             suggestions.style.display = 'block';
         } else {
@@ -283,6 +308,18 @@ function initializeCityInput() {
             }
         }
     });
+}
+
+function formatCityName(city) {
+    const cityName = city.name;
+    const admin1Code = city.admin1_code;
+    const countryCode = city.country_code;
+    const countryName = city.cou_name_en;
+
+    if (countryCode === 'US') {
+        return `${cityName}${admin1Code ? `, ${admin1Code}` : ''}, USA`;
+    }
+    return `${cityName}, ${countryName}`;
 }
 
 function selectCity(cityName) {
