@@ -728,4 +728,16 @@ summary:hover {
     .bearing-buttons {
         justify-content: center;
     }
+
+    .map-container .step-instructions,
+    .map-container > h3,
+    .bearing-controls,
+    .map-info,
+    .main-action {
+        display: none !important;
+    }
+
+    #hengeForm h3 {
+        display: none;
+    }
 }

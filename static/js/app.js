@@ -1,3 +1,7 @@
+function isMobileView() {
+    return window.innerWidth <= 600;
+}
+
 let map = null;
 let marker = null;
 let currentAddress = null;
@@ -245,9 +249,8 @@ function displayMap(lat, lon, roadBearing) {
         })
     }).addTo(map);
 
-    // Create interactive arrow
-    arrowManager.createArrow(lat, lon, roadBearing, { interactive: true });
-    isInteractiveMode = true;
+    arrowManager.createArrow(lat, lon, roadBearing, { interactive: !isMobileView() });
+    isInteractiveMode = !isMobileView();
     isDragging = false;
 }
 
@@ -383,7 +386,7 @@ async function calculateHenge() {
     const loading = document.getElementById('loading');
     const hengeResult = document.getElementById('hengeResult');
 
-    calculateBtn.disabled = true;
+    if (calculateBtn) calculateBtn.disabled = true;
     loading.style.display = 'block';
     hengeResult.style.display = 'none';
 
@@ -410,32 +413,39 @@ async function calculateHenge() {
                 calendarButton.addEventListener("click", () => addHengeToCalendar(data));
             }
 
-            // Replace interactive arrow with static arrows
-            if (data.result.henge_found) {
-                arrowManager.clear();
-                arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
-                arrowManager.addSunArrow(currentCoordinates.lat, currentCoordinates.lon, data.result.sun_angle);
+            if (arrowManager && map) {
+                // Replace interactive arrow with static arrows
+                if (data.result.henge_found) {
+                    arrowManager.clear();
+                    arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
+                    arrowManager.addSunArrow(currentCoordinates.lat, currentCoordinates.lon, data.result.sun_angle);
 
-                // Update map legend
-                document.querySelector('.map-info').innerHTML =
-                    '<strong>Map Legend:</strong> Dark arrow shows road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>. Orange arrow shows sun <span class="tooltip-term">azimuth<span class="tooltip">Angle of a celestial object (e.g. the sun) measured clockwise from True North</span></span>.';
-            } else {
-                arrowManager.clear();
-                arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
+                    const mapInfo = document.querySelector('.map-info');
+                    if (mapInfo) {
+                        mapInfo.innerHTML =
+                            '<strong>Map Legend:</strong> Dark arrow shows road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>. Orange arrow shows sun <span class="tooltip-term">azimuth<span class="tooltip">Angle of a celestial object (e.g. the sun) measured clockwise from True North</span></span>.';
+                    }
+                } else {
+                    arrowManager.clear();
+                    arrowManager.createArrow(currentCoordinates.lat, currentCoordinates.lon, data.road_bearing);
 
-                document.querySelector('.map-info').innerHTML =
-                    '<strong>Map Legend:</strong> Dark arrow shows road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>.';
+                    const mapInfo = document.querySelector('.map-info');
+                    if (mapInfo) {
+                        mapInfo.innerHTML =
+                            '<strong>Map Legend:</strong> Dark arrow shows road <span class="tooltip-term">bearing<span class="tooltip">Angle of a terrestrial object (e.g. a road) measured clockwise from True North</span></span>.';
+                    }
+                }
+
+                // Hide interactive elements
+                hideInteractiveElements();
             }
-
-            // Hide interactive elements
-            hideInteractiveElements();
         } else {
             displayError(data.error);
         }
     } catch (error) {
         displayError('Network error. Please try again.');
     } finally {
-        calculateBtn.disabled = false;
+        if (calculateBtn) calculateBtn.disabled = false;
         loading.style.display = 'none';
     }
 }
@@ -455,6 +465,10 @@ function hideInteractiveElements() {
 // Event listeners
 document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('calculateHengeBtn').addEventListener('click', calculateHenge);
+
+    if (isMobileView()) {
+        document.getElementById('submitBtn').textContent = 'Find Henge';
+    }
 
     document.getElementById('resetBtn').addEventListener('click', function () {
         currentBearing = originalBearing;
@@ -499,6 +513,9 @@ document.getElementById('hengeForm').addEventListener('submit', async function (
 
         if (response.ok) {
             displayAddressLookup(data);
+            if (isMobileView()) {
+                await calculateHenge();
+            }
         } else {
             displayError(data.error, 'addressResult');
         }
