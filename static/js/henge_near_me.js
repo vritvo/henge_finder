@@ -504,9 +504,12 @@ async function initializeCityInput() {
         ).slice(0, 10); // Limit to 10 suggestions
         
         if (filteredCities.length > 0) {
-            suggestions.innerHTML = filteredCities.map(city => 
-                `<div class="suggestion-item" onclick='selectCity("${city}")'>${city}</div>`
+            suggestions.innerHTML = filteredCities.map(city =>
+                `<div class="suggestion-item">${city}</div>`
             ).join('');
+            suggestions.querySelectorAll('.suggestion-item').forEach((el, i) => {
+                el.addEventListener('click', () => selectCity(filteredCities[i]));
+            });
             suggestions.style.display = 'block';
         } else {
             suggestions.style.display = 'none';
