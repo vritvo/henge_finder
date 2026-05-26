@@ -481,38 +481,6 @@ summary:hover {
 }
 
 
-/* Mobile block styles */
-.mobile-block {
-    display: none;
-    min-height: 100vh;
-    background: #5E4955;
-    color: #fff3ec;
-    padding: 40px 20px;
-    text-align: center;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
-
-.mobile-block h1 {
-    color: #fff3ec;
-    margin-bottom: 20px;
-    font-size: 2em;
-}
-
-.mobile-block p {
-    font-size: 1.1em;
-    line-height: 1.6;
-    max-width: 400px;
-    margin-bottom: 15px;
-}
-
-.mobile-block .icon {
-    font-size: 4em;
-    margin-bottom: 20px;
-    opacity: 0.8;
-}
-
 /* Tab navigation styles */
 .tab-navigation {
     display: flex;
@@ -676,4 +644,100 @@ summary:hover {
 
 .henge-indicator.visible {
     opacity: 1;
+}
+
+.orbital-controls-mobile {
+    display: none;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 640px) {
+    .orbital-controls-mobile {
+        display: block;
+    }
+
+    .orbital-controls-desktop {
+        display: none;
+    }
+
+    body {
+        padding: 10px;
+        align-items: flex-start;
+    }
+
+    .container {
+        padding: 20px 15px;
+        border-radius: 12px;
+    }
+
+    h1 {
+        font-size: 1.8em;
+    }
+
+    .tab-navigation {
+        margin-bottom: 20px;
+    }
+
+    .tab-button {
+        padding: 10px 8px;
+        font-size: 14px;
+    }
+
+    .henge-hero-image {
+        display: none;
+    }
+
+    .henge-intro-row {
+        flex-direction: column !important;
+    }
+
+    .side-by-side {
+        flex-direction: column !important;
+    }
+
+    .education-section {
+        padding: 15px;
+    }
+
+    .education-section h2 {
+        font-size: 1.4em;
+    }
+
+    .street-henge-canvas {
+        height: 300px;
+    }
+
+    #map {
+        height: 350px;
+    }
+
+    .compass-container {
+        padding: 0 20px;
+    }
+
+    .bearing-controls {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .bearing-info {
+        justify-content: center;
+    }
+
+    .bearing-buttons {
+        justify-content: center;
+    }
+
+    .map-container .step-instructions,
+    .map-container > h3,
+    .bearing-controls,
+    .map-info,
+    .main-action {
+        display: none !important;
+    }
+
+    #hengeForm h3 {
+        display: none;
+    }
 }
