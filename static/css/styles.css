@@ -651,7 +651,7 @@ summary:hover {
 }
 
 /* Mobile responsive styles */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
     .orbital-controls-mobile {
         display: block;
     }

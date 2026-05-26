@@ -1,5 +1,5 @@
 function isMobileView() {
-    return window.innerWidth <= 600;
+    return window.innerWidth <= 640;
 }
 
 let map = null;
