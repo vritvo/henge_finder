@@ -1,39 +1,3 @@
-// Mobile detection and blocking
-function isMobileDevice() {
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-
-    // Check for mobile user agents - this catches phones, tablets, etc.
-    const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
-    const isMobileUserAgent = mobileRegex.test(userAgent.toLowerCase());
-
-    // Check for touch-only devices (but exclude desktop touch screens)
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const hasMouseSupport = window.matchMedia('(pointer: fine)').matches;
-    const isTouchOnly = isTouchDevice && !hasMouseSupport;
-
-    // Block if mobile user agent OR touch-only device (excludes desktop touch screens)
-    return isMobileUserAgent || isTouchOnly;
-}
-
-function initializeApp() {
-    if (isMobileDevice()) {
-        // Show mobile block, hide main content
-        document.getElementById('mobileBlock').style.display = 'flex';
-        document.getElementById('mainContainer').style.display = 'none';
-        return;
-    }
-
-    // Hide mobile block, show main content
-    document.getElementById('mobileBlock').style.display = 'none';
-    document.getElementById('mainContainer').style.display = 'block';
-}
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', initializeApp);
-
-// Re-check on window resize (in case user rotates device or resizes browser)
-window.addEventListener('resize', initializeApp);
-
 let map = null;
 let marker = null;
 let currentAddress = null;
@@ -997,27 +961,36 @@ function initOrbitalVisualization() {
 
 function setupOrbitalControls() {
     const timeSlider = document.getElementById('orbitalTimeSlider');
+    const timeSliderMobile = document.getElementById('orbitalTimeSliderMobile');
     const timeDisplay = document.getElementById('orbitalTimeDisplay');
     const equinoxIndicator = document.getElementById('orbitalEquinoxIndicator');
 
     if (!timeSlider || !timeDisplay) return;
 
-    timeSlider.addEventListener('input', (e) => {
+    function onSliderInput(e) {
         orbitalCurrentDay = parseInt(e.target.value);
+        if (timeSlider) timeSlider.value = orbitalCurrentDay;
+        if (timeSliderMobile) timeSliderMobile.value = orbitalCurrentDay;
         updateOrbitalTimeDisplay();
         updateOrbitalVisualization();
-    });
+    }
+
+    timeSlider.addEventListener('input', onSliderInput);
+    if (timeSliderMobile) {
+        timeSliderMobile.addEventListener('input', onSliderInput);
+    }
 
     updateOrbitalTimeDisplay();
 }
 
 function updateOrbitalTimeDisplay() {
     const timeDisplay = document.getElementById('orbitalTimeDisplay');
+    const timeDisplayMobile = document.getElementById('orbitalTimeDisplayMobile');
     if (!timeDisplay) return;
 
-    timeDisplay.textContent = `Day ${orbitalCurrentDay + 1}`;
-
-    // Equinox indicator removed as requested
+    const label = `Day ${orbitalCurrentDay + 1}`;
+    timeDisplay.textContent = label;
+    if (timeDisplayMobile) timeDisplayMobile.textContent = label;
 }
 
 function updateOrbitalVisualization() {
