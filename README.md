@@ -49,6 +49,10 @@ Some sample addresses:
 - `601-615 E 76th St, Chicago, IL` 
 - `3131 Market St, Philadelphia, PA 19104`
 
+## Mobile App
+
+For the full mobile experience, download the Hengefinder app at [hengefinder.com](https://hengefinder.com).
+
 ## How It Works
 
 The algorithm searches for dates when the sun's azimuth at 0.5 degrees elevation (shortly before sunset) aligns with the street's bearing.
