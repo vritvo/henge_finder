@@ -758,3 +758,17 @@ summary:hover {
 .site-footer a:hover {
     text-decoration: underline;
 }
+
+.mobile-app-note {
+    margin-bottom: 6px;
+    color: #999;
+}
+
+.mobile-app-note a {
+    color: #996888;
+    text-decoration: none;
+}
+
+.mobile-app-note a:hover {
+    text-decoration: underline;
+}
